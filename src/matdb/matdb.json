@@ -7,7 +7,7 @@
     },
     "var_properties": null
   },
-  "ElastoPlastic_Perfect": {
+  "PerfectElastPlastic": {
     "cst_properties": {
       "Young": 1000000000.0,
       "Poisson": 0.25

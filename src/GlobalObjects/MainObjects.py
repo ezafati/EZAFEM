@@ -1,5 +1,9 @@
 """"Main GlobalObjects """
+import importlib
 import json
+from typing import Tuple
+
+from scipy.sparse import lil_matrix, coo_matrix
 
 
 class Material:
@@ -9,7 +13,7 @@ class Material:
         self.varprop = var
 
     def __repr__(self):
-        return f'Material(name={self.name}, cst={self.cstprop}, var={self.varprop})'
+        return f'{self.__class__.__name__}(name={self.name}, cst={self.cstprop}, var={self.varprop})'
 
     def add_material(self, db: 'json file'):
         with open(db, 'r') as fdb:
@@ -28,3 +32,20 @@ class Material:
                 self.varprop = mates['var_properties']
             except KeyError:
                 raise KeyError(f'The provided material name {self.name} not found')
+
+    def modify_properties(self, **kwargs):
+        pass
+
+
+class MatrixObj:
+    def __init__(self, size: Tuple[int], mtype: str, dim: int, eltype: str):
+        self.mat = coo_matrix(size)
+        self.mtype = mtype
+        self.dim = dim
+        self.eltype = eltype
+
+    def assembly(self, **kwargs):
+        _module = importlib.import_module('GlobalObjects.MatricesUtils')
+        assembly_method = _module.__dict__[f'_assembly_{self.mtype}_{self.eltype}']
+        assembly_method(self.mat, **kwargs)
+        pass

@@ -11,7 +11,7 @@ mate.add_material(dbpath)
 
 '''add perfect elatsoplastic material'''
 
-mate = Material('ElastoPlastic_Perfect', {'Young': 1E9, 'Poisson': 0.25}, {'siglimit': 10e6})
+mate = Material('PerfectElastPlastic', {'Young': 1E9, 'Poisson': 0.25}, {'siglimit': 10e6})
 mate.add_material(dbpath)
 
 mate = Material('Linear_Elastic')
