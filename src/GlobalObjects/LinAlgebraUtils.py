@@ -1,3 +1,4 @@
+from __future__ import division
 from math import sqrt
 from typing import Type
 
@@ -51,8 +52,7 @@ def precond_ic(mat: Type[csr_matrix]):
                 M[i, k] = M[i, k] / M[k, k]
                 for j in indices[indptr[i] + count:indptr[i + 1]]:
                     M[i, j] = M[i, j] - M[i, k] * M[k, j]
-    print('M is \n', M)
-    Mu_inv = lil_matrix(M.shape)
+    Mu_inv = lil_matrix(M.shape, dtype=np.float64)
     for i in range(dim):
         Mu_inv[i, i] = 1 / sqrt(M[i, i])
     for col in range(1, dim):
@@ -61,10 +61,6 @@ def precond_ic(mat: Type[csr_matrix]):
             for j in indices[indptr[row]:indptr[row + 1]]:
                 if j > row:
                     Mu_inv[row, col] -= M[row, j] * Mu_inv[j, col]
-            Mu_inv[row, col] /= sqrt(M[row, row])
-    print('Mu is \n', Mu_inv)
+            Mu_inv[row, col] /= M[row, row]
     Ml_inv = Mu_inv.T
-    print('Ml is \n', Ml_inv)
-    for i in range(dim):
-        Ml_inv[i, i] = 1
     return csr_matrix(Mu_inv*Ml_inv)
