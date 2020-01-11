@@ -1,7 +1,8 @@
+from math import sqrt
 from typing import Type
 
 import numpy as np
-from scipy.sparse import csr_matrix
+from scipy.sparse import csr_matrix, lil_matrix
 from scipy.sparse.linalg import norm
 
 
@@ -26,7 +27,7 @@ def cg_method(x: 'Array', mat: Type[csr_matrix], b: 'Array', **kwargs):
     count = 0
     while ratio < eps and count < 100:
         fact = mat * p
-        alpha = r.dot(r)/ p.dot(fact)
+        alpha = r.dot(r) / p.dot(fact)
         x = x + alpha * p
         rp = r + alpha * fact
         beta = rp.dot(rp)[0] / r.dot(r)
@@ -38,4 +39,32 @@ def cg_method(x: 'Array', mat: Type[csr_matrix], b: 'Array', **kwargs):
 
 def precond_ic(mat: Type[csr_matrix]):
     """return preconditionner using incomplete Cholesky decomposition"""
-    pass
+    M = mat.copy()
+    indices = M.indices
+    indptr = M.indptr
+    dim = M.shape[0]
+    for i in range(1, dim):
+        count = 0
+        for k in indices[indptr[i]:indptr[i + 1]]:
+            if k < i:
+                count += 1
+                M[i, k] = M[i, k] / M[k, k]
+                for j in indices[indptr[i] + count:indptr[i + 1]]:
+                    M[i, j] = M[i, j] - M[i, k] * M[k, j]
+    print('M is \n', M)
+    Mu_inv = lil_matrix(M.shape)
+    for i in range(dim):
+        Mu_inv[i, i] = 1 / sqrt(M[i, i])
+    for col in range(1, dim):
+        rowlist = reversed(range(col))
+        for row in rowlist:
+            for j in indices[indptr[row]:indptr[row + 1]]:
+                if j > row:
+                    Mu_inv[row, col] -= M[row, j] * Mu_inv[j, col]
+            Mu_inv[row, col] /= sqrt(M[row, row])
+    print('Mu is \n', Mu_inv)
+    Ml_inv = Mu_inv.T
+    print('Ml is \n', Ml_inv)
+    for i in range(dim):
+        Ml_inv[i, i] = 1
+    return csr_matrix(Mu_inv*Ml_inv)
