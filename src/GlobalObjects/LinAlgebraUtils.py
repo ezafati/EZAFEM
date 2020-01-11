@@ -39,7 +39,8 @@ def cg_method(x: 'Array', mat: Type[csr_matrix], b: 'Array', **kwargs):
 
 
 def precond_ic(mat: Type[csr_matrix]):
-    """return preconditionner using incomplete Cholesky decomposition"""
+    """return preconditionner using incomplete
+    Cholesky decomposition"""
     M = mat.copy()
     indices = M.indices
     indptr = M.indptr
