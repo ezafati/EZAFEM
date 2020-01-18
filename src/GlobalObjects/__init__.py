@@ -1,1 +1,1 @@
-import GlobalObjects.MainObjects
+__all__ = ['LinAlgebraUtils', 'MainObjects', 'MeshOjects', 'StiffnessMatrixUtils', 'MassMatrixUltis']
