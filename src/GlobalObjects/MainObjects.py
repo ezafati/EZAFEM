@@ -1,9 +1,13 @@
 """"Main GlobalObjects """
-import importlib
 import json
-from typing import Tuple
+from typing import Tuple, List
 
 from scipy.sparse import lil_matrix, coo_matrix
+from collections import namedtuple
+
+import globalvars
+
+Point2D = namedtuple('Point2D', 'x y')
 
 
 class Material:
@@ -45,7 +49,22 @@ class MatrixObj:
         self.eltype = eltype
 
     def assembly(self, **kwargs):
-        _module = importlib.import_module('GlobalObjects.MatricesUtils')
-        assembly_method = _module.__dict__[f'_assembly_{self.mtype}_{self.eltype}']
-        assembly_method(self.mat, **kwargs)
-        pass
+        return eval(f'{self}.assembly_{self.dim}(**{kwargs})')
+
+    def assembly_2d(self, **kwargs):
+        nel = globalvars.mesh.conn.size[1]
+        nvert = globalvars.mesh.conn.size[0]
+        for p in range(nel):
+            connel = globalvars.mesh.conn[:, p]
+            Kel = eval(f'elem_{self.mtype}_matrix_{self.eltype}({connel}, **{kwargs})')
+            for i in range(nvert):
+                for j in range(nvert):
+                    self.mat[2 * connel[i]:2 * connel[i] + 2, 2 * connel[j]:2 * connel[j] + 2] = self.mat[
+                                                                                            2 * connel[i]:2 * connel[
+                                                                                                i] + 2,
+                                                                                            2 * connel[j]:2 * connel[
+                                                                                                j] + 2] + Kel[
+                                                                                                          2 * i:2 * i + 2,
+                                                                                                          2 * j:2 * j + 2]
+
+
