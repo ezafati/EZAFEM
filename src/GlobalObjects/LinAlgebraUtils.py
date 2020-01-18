@@ -1,14 +1,8 @@
-from __future__ import division
 from math import sqrt
 from typing import Type
 
 import numpy as np
 from scipy.sparse import csr_matrix, lil_matrix
-from scipy.sparse.linalg import norm
-
-
-def _assembly_mass_tri3(mat, density):
-    return 'not implemented'
 
 
 def cg_method(x: 'Array', mat: Type[csr_matrix], b: 'Array', **kwargs):
@@ -19,23 +13,24 @@ def cg_method(x: 'Array', mat: Type[csr_matrix], b: 'Array', **kwargs):
         eps = 1e-5
     r = mat * x - b
     try:
-        ratio = norm(r, ord=np.inf) / norm(b, ord=np.inf)
+        ratio = np.linalg.norm(r, ord=np.inf) / np.linalg.norm(b, ord=np.inf)
     except ZeroDivisionError:
         size = x.shape[0]
         x = np.zeros(size)
         return x
     p = -r
     count = 0
-    while ratio < eps and count < 100:
+    while ratio > eps and count < 100:
         fact = mat * p
-        alpha = r.dot(r) / p.dot(fact)
+        alpha = r.T.dot(r) / p.T.dot(fact)
         x = x + alpha * p
         rp = r + alpha * fact
-        beta = rp.dot(rp)[0] / r.dot(r)
+        beta = rp.T.dot(rp) / r.T.dot(r)
         p = -rp + beta * p
         r = rp
+        ratio = np.linalg.norm(r, ord=np.inf) / np.linalg.norm(b, ord=np.inf)
         count += 1
-    return x
+    return x, count
 
 
 def precond_ic(mat: Type[csr_matrix]):
@@ -64,4 +59,4 @@ def precond_ic(mat: Type[csr_matrix]):
                     Mu_inv[row, col] -= M[row, j] * Mu_inv[j, col]
             Mu_inv[row, col] /= M[row, row]
     Ml_inv = Mu_inv.T
-    return csr_matrix(Mu_inv*Ml_inv)
+    return csr_matrix(Mu_inv * Ml_inv)
