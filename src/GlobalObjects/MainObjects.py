@@ -37,7 +37,7 @@ class Material:
             except KeyError:
                 raise KeyError(f'The provided material name {self.name} not found')
 
-    def modify_properties(self, **kwargs):
+    def affect_properties(self, **kwargs):
         pass
 
 

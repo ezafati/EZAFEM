@@ -13,6 +13,7 @@ def elem_mass_matrix_tri3(el: Tuple[int], dens: float, khi: float):
         shmat = np.empty((2, 6))
         shmat[0, 0:6:2] = [1 - xi - nu, xi, nu]
         shmat[1, 1:6:2] = shmat[0, 0:6:2]
+        return shmat
 
     pa, pb, pc = [globalvars.mesh.plist[p] for p in el]
     dJ = np.empty((2, 2))
