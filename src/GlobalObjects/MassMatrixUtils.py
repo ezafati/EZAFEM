@@ -17,10 +17,10 @@ def elem_mass_matrix_tri3(el: Tuple[int], dens: float, khi: float):
 
     pa, pb, pc = [globalvars.mesh.plist[p] for p in el]
     dJ = np.empty((2, 2))
-    dJ[0, 0] = -pa.x + pb.x
-    dJ[0, 1] = -pa.x + pc.x
-    dJ[1, 0] = -pa.y + pb.y
-    dJ[1, 1] = -pa.y + pc.y
+    dJ[0, 0] = -pa[0] + pb[0]
+    dJ[0, 1] = -pa[0] + pc[0]
+    dJ[1, 0] = -pa[0] + pb[0]
+    dJ[1, 1] = -pa[0] + pc[0]
 
     mat_prod = shape_matrix(*pt_gauss).T.dot(shape_matrix(*pt_gauss))
     return dens * mat_prod * np.linalg.det(dJ)

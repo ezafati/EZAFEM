@@ -3,11 +3,9 @@ import json
 from typing import Tuple, List
 
 from scipy.sparse import lil_matrix, coo_matrix
-from collections import namedtuple
+
 
 import globalvars
-
-Point2D = namedtuple('Point2D', 'x y')
 
 
 class Material:
@@ -41,6 +39,23 @@ class Material:
         pass
 
 
+class Boundary:
+    """class describing the boundray conditions"""
+    pass
+
+
+class Interface:
+    def __init__(self, itype: str = None, dom1: Tuple[str] = None, dom2: Tuple[str] = None):
+        self.type = itype
+        self.domA = dom1
+        self.domB = dom2
+
+    def make_link_matrices(self):
+        """C=return tuple contains the link matrices
+        corresponding to the interface A-B"""
+        return 'not implemented'
+
+
 class MatrixObj:
     def __init__(self, size: Tuple[int], mtype: str, dim: int, eltype: str):
         self.mat = coo_matrix(size)
@@ -60,11 +75,11 @@ class MatrixObj:
             for i in range(nvert):
                 for j in range(nvert):
                     self.mat[2 * connel[i]:2 * connel[i] + 2, 2 * connel[j]:2 * connel[j] + 2] = self.mat[
-                                                                                            2 * connel[i]:2 * connel[
-                                                                                                i] + 2,
-                                                                                            2 * connel[j]:2 * connel[
-                                                                                                j] + 2] + Kel[
-                                                                                                          2 * i:2 * i + 2,
-                                                                                                          2 * j:2 * j + 2]
-
-
+                                                                                                 2 * connel[i]:2 *
+                                                                                                               connel[
+                                                                                                                   i] + 2,
+                                                                                                 2 * connel[j]:2 *
+                                                                                                               connel[
+                                                                                                                   j] + 2] + Kel[
+                                                                                                                             2 * i:2 * i + 2,
+                                                                                                                             2 * j:2 * j + 2]
