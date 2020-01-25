@@ -4,7 +4,6 @@ from typing import Tuple, List
 
 from scipy.sparse import lil_matrix, coo_matrix
 
-
 import globalvars
 
 
@@ -83,3 +82,6 @@ class MatrixObj:
                                                                                                                    j] + 2] + Kel[
                                                                                                                              2 * i:2 * i + 2,
                                                                                                                              2 * j:2 * j + 2]
+
+    def assembly_vector_2d(self):
+        pass
