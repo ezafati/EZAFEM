@@ -2,6 +2,17 @@ from typing import List, Tuple
 
 import numpy as np
 
+from globalvars import mesh
+
+
+def initialize_deco(cls):
+    cls.dim = mesh.dim
+    cls.eltype = mesh.eltype
+    cls.npts = len(mesh.plist)
+    cls.nel = mesh.conn.size[1]
+    cls.conn = mesh.conn
+    return cls
+
 
 class MeshObj:
     def __init__(self, label: str, dim: int, plist: List[Tuple[int]], conn: 'Array', eltype: str, gard: 'Array',  probtype: str):

@@ -1,10 +1,10 @@
 """"Main GlobalObjects """
 import json
-from typing import Tuple, List
+from typing import Tuple
 
-from scipy.sparse import lil_matrix, coo_matrix
+from scipy.sparse import coo_matrix
 
-import globalvars
+from GlobalObjects import initialize_deco
 
 
 class Material:
@@ -55,21 +55,22 @@ class Interface:
         return 'not implemented'
 
 
+@initialize_deco
 class MatrixObj:
-    def __init__(self, size: Tuple[int], mtype: str, dim: int, eltype: str):
-        self.mat = coo_matrix(size)
+    def __init__(self, mtype: str):
         self.mtype = mtype
-        self.dim = dim
-        self.eltype = eltype
+
+    def __call__(self):
+        return coo_matrix((self.npts, self.npts))
 
     def assembly(self, **kwargs):
         return eval(f'{self}.assembly_{self.dim}(**{kwargs})')
 
     def assembly_2d(self, **kwargs):
-        nel = globalvars.mesh.conn.size[1]
-        nvert = globalvars.mesh.conn.size[0]
+        nel = self.nel
+        nvert = self.npts
         for p in range(nel):
-            connel = globalvars.mesh.conn[:, p]
+            connel = self.conn
             Kel = eval(f'elem_{self.mtype}_matrix_{self.eltype}({connel}, **{kwargs})')
             for i in range(nvert):
                 for j in range(nvert):
