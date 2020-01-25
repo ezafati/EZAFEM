@@ -1,0 +1,19 @@
+{
+  "DATABASE_VERSION": "1.0.0",
+  "Linear_Elastic": {
+    "cst_properties": {
+      "Young": 1000000000.0,
+      "Poisson": 0.25
+    },
+    "var_properties": null
+  },
+  "PerfectElastPlastic": {
+    "cst_properties": {
+      "Young": 1000000000.0,
+      "Poisson": 0.25
+    },
+    "var_properties": {
+      "siglimit": 10000000.0
+    }
+  }
+}
