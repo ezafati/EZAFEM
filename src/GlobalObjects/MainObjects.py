@@ -5,6 +5,7 @@ from typing import Tuple
 from scipy.sparse import coo_matrix
 
 from GlobalObjects import initialize_deco
+import numpy as np
 
 
 class Material:
@@ -59,9 +60,7 @@ class Interface:
 class MatrixObj:
     def __init__(self, mtype: str):
         self.mtype = mtype
-
-    def __call__(self):
-        return coo_matrix((self.npts, self.npts))
+        self.mat = coo_matrix((self.npts, self.npts), dtype=np.float32)
 
     def assembly(self, **kwargs):
         return eval(f'{self}.assembly_{self.dim}(**{kwargs})')
@@ -84,5 +83,16 @@ class MatrixObj:
                                                                                                                              2 * i:2 * i + 2,
                                                                                                                              2 * j:2 * j + 2]
 
-    def assembly_vector_2d(self):
-        pass
+
+@initialize_deco
+class VectObject:
+    def __init__(self, vtype: str):
+        self.vtype = vtype
+        self.mat = coo_matrix((self.npts, 1), dtype=np.float32)
+
+    def assembly(self, **kwargs):
+        return eval(f'{self}.assembly_{self.dim}(**{kwargs})')
+
+    def assembly_2d(self, **kwargs):
+        nel = self.nel
+        nvert = self.npts
