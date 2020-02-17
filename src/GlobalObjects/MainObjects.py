@@ -96,3 +96,6 @@ class VectObject:
     def assembly_2d(self, **kwargs):
         nel = self.nel
         nvert = self.npts
+        for p in range(nel):
+            connel = self.conn
+            Kel = eval(f'elem_{self.vtype}_vect_{self.eltype}({connel}, **{kwargs})')
