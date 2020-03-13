@@ -44,3 +44,7 @@ def elem_stiff_matrix_tri3(p: int, cstprop: Dict[str, float]):
     Ke = matshpae.T * D * matshpae * abs(detJ)
     return Ke
 
+
+def elem_disp_vect_tri3(sigma: Tuple[float], p: int):
+    Nav, Nbv, Ncv, detJ = globalvars.mesh.shape_grad[:, p]
+    pass
