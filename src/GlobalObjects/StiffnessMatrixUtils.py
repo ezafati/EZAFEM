@@ -39,12 +39,12 @@ def elem_stiff_matrix_tri3(p: int, cstprop: Dict[str, float]):
     matshpae = np.zeros((3, 6), dtype=np.float32)  # init shape matrix
     matshpae[0, 0:6:2] = [Nav[0], Nbv[0], Ncv[0]]
     matshpae[1, 1:6:2] = [Nav[1], Nbv[1], Ncv[1]]
-    matshpae[2, 0:6] = [Nav[0], Nav[1], Nbv[0], Nbv[1], Ncv[0], Ncv[1]]
+    matshpae[2, 0:6] = [Nav[1], Nav[0], Nbv[1], Nbv[0], Ncv[1], Ncv[0]]
 
     Ke = matshpae.T * D * matshpae * abs(detJ)
     return Ke
 
 
-def elem_disp_vect_tri3(sigma: Tuple[float], p: int):
+def elem_forc_vect_tri3(p: int):
     Nav, Nbv, Ncv, detJ = globalvars.mesh.shape_grad[:, p]
     pass

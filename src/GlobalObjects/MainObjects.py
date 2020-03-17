@@ -2,10 +2,11 @@
 import json
 from typing import Tuple
 
-from scipy.sparse import coo_matrix
+from scipy.sparse import coo_matrix, lil_matrix
 
 from GlobalObjects import initialize_deco
 import numpy as np
+from globalvars import mesh
 
 
 class Material:
@@ -56,20 +57,20 @@ class Interface:
         return 'not implemented'
 
 
-@initialize_deco
+@initialize_deco(mesh)
 class MatrixObj:
     def __init__(self, mtype: str):
         self.mtype = mtype
-        self.mat = coo_matrix((self.npts, self.npts), dtype=np.float32)
+        self.mat = lil_matrix(shape=(self.npts, self.npts), dtype=np.float32)
 
     def assembly(self, **kwargs):
         return eval(f'{self}.assembly_{self.dim}(**{kwargs})')
 
     def assembly_2d(self, **kwargs):
         nel = self.nel
-        nvert = self.npts
+        nvert = self.nbvertx  # number of vertexes by element
         for p in range(nel):
-            connel = self.conn
+            connel = self.conn[:, p]
             Kel = eval(f'elem_{self.mtype}_matrix_{self.eltype}({connel}, **{kwargs})')
             for i in range(nvert):
                 for j in range(nvert):
@@ -84,18 +85,21 @@ class MatrixObj:
                                                                                                                              2 * j:2 * j + 2]
 
 
-@initialize_deco
+@initialize_deco(mesh)
 class VectObject:
     def __init__(self, vtype: str):
-        self.vtype = vtype
-        self.mat = coo_matrix((self.npts, 1), dtype=np.float32)
+        self.vtype = vtype  # vector type (force, ...)
+        self.mat = lil_matrix(shape=(self.npts, 1), dtype=np.float32)
 
     def assembly(self, **kwargs):
         return eval(f'{self}.assembly_{self.dim}(**{kwargs})')
 
     def assembly_2d(self, **kwargs):
         nel = self.nel
-        nvert = self.npts
+        nvert = self.nbvertx
         for p in range(nel):
-            connel = self.conn
-            Kel = eval(f'elem_{self.vtype}_vect_{self.eltype}({connel}, **{kwargs})')
+            connel = self.conn[:, p]
+            vel = eval(f'elem_{self.vtype}_vect_{self.eltype}({p}, **{kwargs})')
+            for i in range(nvert):
+                self.mat[2 * connel[i]:2 * connel[i] + 2] = self.mat[2 * connel[i]:2 * connel[i] + 2] + vel[
+                                                                                                        2 * i:2 * i + 2]

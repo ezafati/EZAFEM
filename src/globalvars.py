@@ -1,3 +1,3 @@
-from GlobalObjects.MeshOjects import MeshObj
+from GlobalObjects.MeshObjects import MeshObj
 
-mesh = MeshObj(None, None, None)
+mesh = MeshObj(label='')
