@@ -2,9 +2,7 @@
 import json
 from typing import Tuple, Type
 from scipy.sparse import lil_matrix
-from GlobalObjects import initialize_deco
 import numpy as np
-from globalvars import mesh
 
 
 class Material:
@@ -66,7 +64,7 @@ class MatrixObj:
         if instance not in self.data:
             npt = instance.plist.size[0]
             dim = instance.dim
-            self.data[instance] = lil_matrix((dim*npt, dim*npt), dtype=np.float64)
+            self.data[instance] = lil_matrix((dim * npt, dim * npt), dtype=np.float64)
         return self.data.get(instance)
 
     def __set__(self, instance, value):
@@ -85,17 +83,19 @@ class MatrixObj:
             for i in range(nvert):
                 for j in range(nvert):
                     self.data[part][2 * connel[i]:2 * connel[i] + 2, 2 * connel[j]:2 * connel[j] + 2] = self.data[part][
-                                                                                                 2 * connel[i]:2 *
+                                                                                                        2 * connel[
+                                                                                                            i]:2 *
                                                                                                                connel[
                                                                                                                    i] + 2,
-                                                                                                 2 * connel[j]:2 *
+                                                                                                        2 * connel[
+                                                                                                            j]:2 *
                                                                                                                connel[
                                                                                                                    j] + 2] + Kel[
                                                                                                                              2 * i:2 * i + 2,
                                                                                                                              2 * j:2 * j + 2]
 
 
-class VectObject:
+"""class VectObject:
     def __init__(self, vtype: str):
         self.vtype = vtype  # vector type (force, ...)
         self.mat = lil_matrix((self.npts, 1), dtype=np.float32)
@@ -110,4 +110,4 @@ class VectObject:
             connel = self.conn[:, p]
             vel = eval(f'elem_{self.vtype}_vect_{self.eltype}({p}, {mesh}, **{kwargs})')
             for i in range(nvert):
-                self.mat[2 * connel[i]:2 * connel[i] + 2] = vel[2 * i:2 * i + 2]
+                self.mat[2 * connel[i]:2 * connel[i] + 2] = vel[2 * i:2 * i + 2]"""

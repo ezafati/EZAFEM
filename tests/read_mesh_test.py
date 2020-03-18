@@ -1,4 +1,4 @@
-from GlobalObjects.MeshObjects import MeshObj
+from GlobalObjects import MeshObj
 
 
 mymesh = MeshObj()

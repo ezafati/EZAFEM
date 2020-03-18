@@ -1,5 +1,5 @@
 from typing import List, Tuple, Type
-from GlobalObjects import Material, MatrixObj
+from GlobalObjects.MainObjects import Material, MatrixObj
 
 import numpy as np
 
@@ -11,6 +11,62 @@ class MeshObj(object):
         self.eltype = eltype  # element type
         self.probtype = probtype  # problem type (plane strain  or stress if 2D)
         self.nbvertx = nbvertx
+        self.parts = []
+
+    def get_parts(self, file):
+        with open(file, 'r') as f:
+            try:
+                while True:
+                    line = next(f)
+                    if line.split(' ')[0] == 'PART_NAME':
+                        self.parts.append(Part(label=line.split(' ')[1], dim=self.dim, probtype=self.probtype,
+                                               eltype=self.eltype, nbvertx=self.nbvertx))
+            except StopIteration:
+                pass
+
+    def get_part_plist(self, part, file):
+        with open(file, 'r') as f:
+            try:
+                while True:
+                    line = next(f)
+                    try:
+                        if line.split(' ')[1] == part.label:
+                            while True:
+                                line = next(f)
+                                if line.strip() == 'POINT_LIST':
+                                    size = int(next(f).split(' ')[1])
+                                    part.plist = np.ndarray(shape=(size, self.dim), dtype=np.float64)
+                                    for npt in range(size):
+                                        pt = next(f).split(' ')
+                                        part.plist[npt, 0:2] = [float(pt[1]), float(pt[2])]
+                                    break
+                            break
+                    except IndexError:
+                        pass
+            except StopIteration:
+                pass
+
+    def get_part_topology(self, part, file):
+        with open(file, 'r') as f:
+            try:
+                while True:
+                    line = next(f)
+                    try:
+                        if line.split(' ')[1] == part.label:
+                            while True:
+                                line = next(f)
+                                if line.strip() == 'TOPOLOGY':
+                                    size = int(next(f).split(' ')[1])
+                                    part.conn = np.ndarray(shape=(self.nbvertx, size), dtype=np.float64)
+                                    for nel in range(size):
+                                        el = next(f).split(' ')
+                                        part.conn[:, nel] = [int(el[1]), int(el[2]), int(el[3])]
+                                    break
+                            break
+                    except IndexError:
+                        pass
+            except StopIteration:
+                pass
 
     def read_ezamesh(self, file):
         """Read  mesh file from EZAMESH
@@ -18,40 +74,19 @@ class MeshObj(object):
         self.dim = 2
         self.eltype = 'tri3'
         self.nbvertx = 3
-        with open(file, 'r') as f:
-            try:
-                label = next(f).split(' ')[2]
-                self.label = label
-                f.seek(0, 0)
-                while True:
-                    line = next(f)
-                    if line.replace(' ', '').lower().strip() == 'pointlist':
-                        size = int(next(f).split(' ')[1])
-                        print(size)
-                        self.plist = np.ndarray(shape=(size, self.dim), dtype=np.float64)
-                        for npt in range(size):
-                            pt = next(f).split(' ')
-                            self.plist[npt, 0:2] = [float(pt[1]), float(pt[2])]
-                        break
-                f.seek(0, 0)
-                while True:
-                    line = next(f)
-                    if line.lower().strip() == 'topology':
-                        size = int(next(f).split(' ')[1])
-                        self.conn = np.ndarray(shape=(3, size))
-                        for nel in range(size):
-                            el = next(f).split(' ')
-                            self.conn[:, nel] = [int(el[1]), int(el[2]), int(el[3])]
-                        break
-            except StopIteration:
-                print('END OF THE FILE IS REACHED')
+        self.probtype = 'STRESS'
+        self.get_parts(file)
+        for part in self.parts:
+            self.get_part_plist(part, file)
+            self.get_part_topology(part, file)
 
 
 class Part(MeshObj):
     stiffmat = MatrixObj(mtype='stiff')
 
     def __init__(self, label: str = 'PART', plist: List[Tuple[int]] = None, conn: 'Array' = None, gard: 'Array' = None,
-                 mate: Type[Material] = None, dim: int = 2, eltype: str = None, probtype: str = None, nbvertx: int = None):
+                 mate: Type[Material] = None, dim: int = 2, eltype: str = None, probtype: str = None,
+                 nbvertx: int = None):
         super().__init__(dim, eltype, probtype, nbvertx)
         self.label = label
         self.plist = plist
