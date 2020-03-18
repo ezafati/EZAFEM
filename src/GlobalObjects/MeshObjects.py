@@ -79,6 +79,7 @@ class MeshObj(object):
         for part in self.parts:
             self.get_part_plist(part, file)
             self.get_part_topology(part, file)
+            print(type(part.stiffmat))
 
 
 class Part(MeshObj):

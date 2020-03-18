@@ -62,7 +62,7 @@ class MatrixObj:
         if not instance:
             return self
         if instance not in self.data:
-            npt = instance.plist.size[0]
+            npt = instance.plist.shape[0]
             dim = instance.dim
             self.data[instance] = lil_matrix((dim * npt, dim * npt), dtype=np.float64)
         return self.data.get(instance)

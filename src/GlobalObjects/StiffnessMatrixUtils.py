@@ -33,7 +33,7 @@ def elem_stiff_matrix_tri3(p: int, part: Type[Part]):
         D = hooke_plane_stress(youn, poi)
     else:
         D = hooke_plane_strain(youn, poi)
-    Nav, Nbv, Ncv, detJ = mesh.shape_grad[:, p]
+    Nav, Nbv, Ncv, detJ = part.shape_grad[:, p]
     matshpae = np.zeros((3, 6), dtype=np.float64)  # init shape matrix
     matshpae[0, 0:6:2] = [Nav[0], Nbv[0], Ncv[0]]
     matshpae[1, 1:6:2] = [Nav[1], Nbv[1], Ncv[1]]
