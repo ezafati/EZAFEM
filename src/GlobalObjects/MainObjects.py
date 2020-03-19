@@ -6,7 +6,7 @@ import numpy as np
 from GlobalObjects.StiffnessMatrixUtils import elem_stiff_matrix_tri3
 
 
-def assembly_2d(part, mtype, **kwargs):
+def _mat_assembly_2d(part, mtype, **kwargs):
     nel = part.conn.shape[1]
     nvert = part.conn.shape[0]  # number of vertexes by element
     mat = eval(f'part.{mtype}mat')
@@ -21,6 +21,17 @@ def assembly_2d(part, mtype, **kwargs):
                                                                                             j] + 2] + Kel[
                                                                                                       2 * i:2 * i + 2,
                                                                                                       2 * j:2 * j + 2]
+
+
+def _vct_assembly_2d(part, vtype, **kwargs):
+    nel = part.conn.shape[1]
+    nvert = part.conn.shape[0]  # number of vertexes by element
+    vct = eval(f'part.{vtype}vct')
+    for p in range(nel):
+        connel = part.conn[:, p]
+        vel = eval(f'elem_{vtype}_vect_{part.eltype}(p, part, **kwargs)')
+        for i in range(nvert):
+            vct.mat[2 * connel[i]:2 * connel[i] + 2] = vel[2 * i:2 * i + 2]
 
 
 class Material:
@@ -91,19 +102,19 @@ class MatrixObj:
         self.data[instance] = value
 
 
-"""class VectObject:
+class VectObject:
     def __init__(self, vtype: str):
         self.vtype = vtype  # vector type (force, ...)
-        self.mat = lil_matrix((self.npts, 1), dtype=np.float32)
+        self.data = {}
 
-    def assembly(self, **kwargs):
-        return eval(f'{self}.assembly_{self.dim}(**{kwargs})')
+    def __get__(self, instance, owner):
+        if not instance:
+            return self
+        if instance not in self.data:
+            npt = instance.plist.shape[0]
+            dim = instance.dim
+            self.data[instance] = lil_matrix((dim * npt, 1), dtype=np.float64)
+        return self.data.get(instance)
 
-    def assembly_2d(self, **kwargs):
-        nel = self.nel
-        nvert = self.nbvertx
-        for p in range(nel):
-            connel = self.conn[:, p]
-            vel = eval(f'elem_{self.vtype}_vect_{self.eltype}({p}, {mesh}, **{kwargs})')
-            for i in range(nvert):
-                self.mat[2 * connel[i]:2 * connel[i] + 2] = vel[2 * i:2 * i + 2]"""
+    def __set__(self, instance, value):
+        self.data[instance] = value

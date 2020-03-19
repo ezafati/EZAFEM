@@ -22,7 +22,6 @@ def myfunc(x):
     print(eval(f'x.x'))
 
 
-A = np.ones((2,2))
-b = np.array([1,3])
+A = np.ndarray((3,2,2))
 
-print(A.dot(b))
+print(A)

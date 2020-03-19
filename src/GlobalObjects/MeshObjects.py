@@ -1,5 +1,5 @@
 from typing import List, Tuple, Type
-from GlobalObjects.MainObjects import Material, MatrixObj, assembly_2d
+from GlobalObjects.MainObjects import Material, MatrixObj, _mat_assembly_2d, VectObject
 
 import numpy as np
 import os.path
@@ -90,10 +90,12 @@ class MeshObj(object):
 class Part(MeshObj):
     stiffmat = MatrixObj(mtype='stiff')
     massmat = MatrixObj(mtype='mass')
+    dispvct = VectObject(vtype='disp')
+    forcvct = VectObject(vtype='forc')
 
     def __init__(self, label: str = 'PART', plist: List[Tuple[int]] = None, conn: 'Array' = None, gard: 'Array' = None,
                  mate: Type[Material] = None, dim: int = 2, eltype: str = None, probtype: str = None,
-                 nbvertx: int = None):
+                 nbvertx: int = None, defoarray: 'Array' = None):
         super().__init__(dim, eltype, probtype, nbvertx)
         self.label = label
         self.plist = plist
@@ -101,6 +103,7 @@ class Part(MeshObj):
         self.gard = gard
         self.mate = mate
         self.shape_grad = gard
+        self.defo_array = defoarray
 
     def __repr__(self):
         return f'{self.__class__.__name__}(label={self.label}, eltype={self.eltype}, mate={self.mate}, ' \
@@ -133,7 +136,7 @@ class Part(MeshObj):
         """assembly matrix according to the
         matrix type"""
         mat = eval(f'self.{mtype}mat')
-        eval(f'assembly_{self.dim}d(self, mtype, **kwargs)')
+        eval(f'_mat_assembly_{self.dim}d(self, mtype, **kwargs)')
 
     def grad_shape_array(self):
         """"compute the gradient shape array
@@ -150,10 +153,10 @@ class Part(MeshObj):
             el = self.conn[:, p]
             pa, pb, pc = [self.plist[p] for p in el]
             J = np.zeros((2, 2), dtype=np.float64)  # init jacob matrix
-            J[0, 0] = -pa[1] + pb[1]
-            J[0, 1] = pa[1] - pc[1]
-            J[1, 0] = pa[0] - pb[0]
-            J[1, 1] = -pa[0] + pc[0]
+            J[0, 0] = -pa[1] + pc[1]
+            J[0, 1] = pa[1] - pb[1]
+            J[1, 0] = pa[0] - pc[0]
+            J[1, 1] = -pa[0] + pb[0]
             detJ = J[0, 0] * J[1, 1] - J[0, 1] * J[1, 0]
             Nav = J.dot(np.array([-1, -1])) / detJ  # Nav = (d(Na)/dx, d(Na)/dy)
             Nbv = J.dot(np.array([1, 0])) / detJ
