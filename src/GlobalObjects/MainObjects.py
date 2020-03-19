@@ -3,6 +3,24 @@ import json
 from typing import Tuple, Type
 from scipy.sparse import lil_matrix
 import numpy as np
+from GlobalObjects.StiffnessMatrixUtils import elem_stiff_matrix_tri3
+
+
+def assembly_2d(part, mtype, **kwargs):
+    nel = part.conn.shape[1]
+    nvert = part.conn.shape[0]  # number of vertexes by element
+    mat = eval(f'part.{mtype}mat')
+    for p in range(nel):
+        connel = part.conn[:, p]
+        Kel = eval(f'elem_{mtype}_matrix_{part.eltype}(p, part, **kwargs)')
+        for i in range(nvert):
+            for j in range(nvert):
+                mat[2 * connel[i]:2 * connel[i] + 2, 2 * connel[j]:2 * connel[j] + 2] = mat[
+                                                                                        2 * connel[i]:2 * connel[i] + 2,
+                                                                                        2 * connel[j]:2 * connel[
+                                                                                            j] + 2] + Kel[
+                                                                                                      2 * i:2 * i + 2,
+                                                                                                      2 * j:2 * j + 2]
 
 
 class Material:
@@ -71,30 +89,6 @@ class MatrixObj:
 
     def __set__(self, instance, value):
         self.data[instance] = value
-
-    def _assembly(self, part, **kwargs):
-        dim = part.dim
-        return eval(f'{self}.assembly_{dim}({part},**{kwargs})')
-
-    def assembly_2d(self, part, **kwargs):
-        nel = part.conn.size[1]
-        nvert = part.nbvertx  # number of vertexes by element
-        for p in range(nel):
-            connel = part.conn[:, p]
-            Kel = eval(f'elem_{self.mtype}_matrix_{part.eltype}({p}, {part}, **{kwargs})')
-            for i in range(nvert):
-                for j in range(nvert):
-                    self.data[part][2 * connel[i]:2 * connel[i] + 2, 2 * connel[j]:2 * connel[j] + 2] = self.data[part][
-                                                                                                        2 * connel[
-                                                                                                            i]:2 *
-                                                                                                               connel[
-                                                                                                                   i] + 2,
-                                                                                                        2 * connel[
-                                                                                                            j]:2 *
-                                                                                                               connel[
-                                                                                                                   j] + 2] + Kel[
-                                                                                                                             2 * i:2 * i + 2,
-                                                                                                                             2 * j:2 * j + 2]
 
 
 """class VectObject:

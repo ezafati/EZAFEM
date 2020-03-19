@@ -1,5 +1,5 @@
 from typing import List, Tuple, Type
-from GlobalObjects.MainObjects import Material, MatrixObj
+from GlobalObjects.MainObjects import Material, MatrixObj, assembly_2d
 
 import numpy as np
 import os.path
@@ -35,7 +35,7 @@ class MeshObj(object):
                 while True:
                     line = next(f)
                     try:
-                        if line.split(' ')[1] == part.label:
+                        if line.split(' ')[1].strip() == part.label:
                             while True:
                                 line = next(f)
                                 if line.strip() == 'POINT_LIST':
@@ -57,12 +57,12 @@ class MeshObj(object):
                 while True:
                     line = next(f)
                     try:
-                        if line.split(' ')[1] == part.label:
+                        if line.split(' ')[1].strip() == part.label:
                             while True:
                                 line = next(f)
                                 if line.strip() == 'TOPOLOGY':
                                     size = int(next(f).split(' ')[1])
-                                    part.conn = np.ndarray(shape=(self.nbvertx, size), dtype=np.float64)
+                                    part.conn = np.ndarray(shape=(self.nbvertx, size), dtype=np.int)
                                     for nel in range(size):
                                         el = next(f).split(' ')
                                         part.conn[:, nel] = [int(el[1]), int(el[2]), int(el[3])]
@@ -89,6 +89,7 @@ class MeshObj(object):
 
 class Part(MeshObj):
     stiffmat = MatrixObj(mtype='stiff')
+    massmat = MatrixObj(mtype='mass')
 
     def __init__(self, label: str = 'PART', plist: List[Tuple[int]] = None, conn: 'Array' = None, gard: 'Array' = None,
                  mate: Type[Material] = None, dim: int = 2, eltype: str = None, probtype: str = None,
@@ -128,22 +129,23 @@ class Part(MeshObj):
             self.mate = Material(name='Linear_Elastic')
             self.mate.get_material(MATERIAL_DB)
 
-    def assembly(self, mtype, **kwargs):
+    def mat_assembly(self, mtype, **kwargs):
         """assembly matrix according to the
         matrix type"""
-        eval(f'{mtype}mat._assembly({self}, **{kwargs})')
+        mat = eval(f'self.{mtype}mat')
+        eval(f'assembly_{self.dim}d(self, mtype, **kwargs)')
 
     def grad_shape_array(self):
         """"compute the gradient shape array
         """
-        eval(f'{self}.grad_shape_array_{self.eltype}')
+        eval(f'self.grad_shape_array_{self.eltype}()')
 
     def grad_shape_array_tri3(self):
         """Compute the strain-displacement components and the
         determinant of the Jacobian matrix for each element in the
         mesh"""
-        size_conn = self.conn.size[1]
-        vct_tmp = np.zeros((4, size_conn), dtype=np.float64)
+        size_conn = self.conn.shape[1]
+        vct_tmp = []
         for p in range(size_conn):
             el = self.conn[:, p]
             pa, pb, pc = [self.plist[p] for p in el]
@@ -153,9 +155,8 @@ class Part(MeshObj):
             J[1, 0] = pa[0] - pb[0]
             J[1, 1] = -pa[0] + pc[0]
             detJ = J[0, 0] * J[1, 1] - J[0, 1] * J[1, 0]
-
-            Nav = J * np.array([-1, -1]).T / detJ  # Nav = (d(Na)/dx, d(Na)/dy)
-            Nbv = J * np.array([1, 0]).T / detJ
-            Ncv = J * np.array([0, 1]).T / detJ
-            vct_tmp[:, p] = (Nav, Nbv, Ncv, detJ)
+            Nav = J.dot(np.array([-1, -1])) / detJ  # Nav = (d(Na)/dx, d(Na)/dy)
+            Nbv = J.dot(np.array([1, 0])) / detJ
+            Ncv = J.dot(np.array([0, 1])) / detJ
+            vct_tmp.append([Nav, Nbv, Ncv, detJ])
         self.shape_grad = vct_tmp
