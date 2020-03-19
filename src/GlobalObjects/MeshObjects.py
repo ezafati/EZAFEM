@@ -2,6 +2,11 @@ from typing import List, Tuple, Type
 from GlobalObjects.MainObjects import Material, MatrixObj
 
 import numpy as np
+import os.path
+import yaml
+
+MAIN_YAML_PATH = os.path.join(os.path.split(os.path.dirname(__file__))[0], 'main.yml')
+MATERIAL_DB = os.path.join(os.path.split(os.path.dirname(__file__))[0], 'matdb/matdb.json')
 
 
 class MeshObj(object):
@@ -19,7 +24,7 @@ class MeshObj(object):
                 while True:
                     line = next(f)
                     if line.split(' ')[0] == 'PART_NAME':
-                        self.parts.append(Part(label=line.split(' ')[1], dim=self.dim, probtype=self.probtype,
+                        self.parts.append(Part(label=line.split(' ')[1].strip(), dim=self.dim, probtype=self.probtype,
                                                eltype=self.eltype, nbvertx=self.nbvertx))
             except StopIteration:
                 pass
@@ -79,7 +84,7 @@ class MeshObj(object):
         for part in self.parts:
             self.get_part_plist(part, file)
             self.get_part_topology(part, file)
-            print(type(part.stiffmat))
+            part.get_part_material()
 
 
 class Part(MeshObj):
@@ -96,7 +101,41 @@ class Part(MeshObj):
         self.mate = mate
         self.shape_grad = gard
 
+    def __repr__(self):
+        return f'{self.__class__.__name__}(label={self.label}, eltype={self.eltype}, mate={self.mate}, ' \
+               f'probtype={self.probtype}, dim={self.dim})'
+
+    def get_part_material(self):
+        with open(MAIN_YAML_PATH, 'r') as f:
+            d = yaml.load(f.read(), Loader=yaml.Loader)
+        try:
+            mat_list = d['materials']
+            for p in mat_list:
+                if p['part'] == self.label:
+                    self.mate = Material()
+                    self.mate.name = p['type']
+                    self.mate.get_material(MATERIAL_DB)
+                    try:
+                        self.mate.cstprop = p['cstprop']
+                    except KeyError:
+                        pass
+                    try:
+                        self.mate.varprop = p['varprop']
+                    except KeyError:
+                        pass
+        except KeyError:
+            print("DEFAULT MATERIAL WILL BE ASSIGNED TO THE PARTS")
+            self.mate = Material(name='Linear_Elastic')
+            self.mate.get_material(MATERIAL_DB)
+
+    def assembly(self, mtype, **kwargs):
+        """assembly matrix according to the
+        matrix type"""
+        eval(f'{mtype}mat._assembly({self}, **{kwargs})')
+
     def grad_shape_array(self):
+        """"compute the gradient shape array
+        """
         eval(f'{self}.grad_shape_array_{self.eltype}')
 
     def grad_shape_array_tri3(self):

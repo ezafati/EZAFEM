@@ -27,8 +27,10 @@ class Material:
         with open(db, 'r') as fdb:
             mates = json.load(fdb)[self.name]
             try:
-                self.cstprop = mates['cst_properties']
-                self.varprop = mates['var_properties']
+                if self.cstprop is None:
+                    self.cstprop = mates['cst_properties']
+                if self.varprop is None:
+                    self.varprop = mates['var_properties']
             except KeyError:
                 raise KeyError(f'The provided material name {self.name} not found')
 
@@ -70,7 +72,7 @@ class MatrixObj:
     def __set__(self, instance, value):
         self.data[instance] = value
 
-    def assembly(self, part, **kwargs):
+    def _assembly(self, part, **kwargs):
         dim = part.dim
         return eval(f'{self}.assembly_{dim}({part},**{kwargs})')
 
