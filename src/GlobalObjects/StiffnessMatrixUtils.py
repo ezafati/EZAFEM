@@ -33,12 +33,15 @@ def elem_stiff_matrix_tri3(p: int, part: 'Part'):
         D = hooke_plane_stress(youn, poi)
     else:
         D = hooke_plane_strain(youn, poi)
-    Nav, Nbv, Ncv, detJ = part.shape_grad[p]
-    matshpae = np.zeros((3, 6), dtype=np.float64)  # init shape matrix
-    matshpae[0, 0:6:2] = [Nav[0], Nbv[0], Ncv[0]]
-    matshpae[1, 1:6:2] = [Nav[1], Nbv[1], Ncv[1]]
-    matshpae[2, 0:6] = [Nav[1], Nav[0], Nbv[1], Nbv[0], Ncv[1], Ncv[0]]
-    Ke = 1 / 2 * matshpae.T.dot(D).dot(matshpae) * abs(detJ)
+    Ke = np.zeros((part.dim * part.nbvertx, part.dim * part.nbvertx), dtype=np.float64)
+    matshpae = np.zeros((3, part.dim * part.nbvertx), dtype=np.float64)  # init shape matrix
+    for ind in range(len(part.gauss_points)):
+        w = part.gauss_points.weights[ind]
+        Nav, Nbv, Ncv, detJ = part.shape_grad[p][ind]
+        matshpae[0, 0:6:2] = [Nav[0], Nbv[0], Ncv[0]]
+        matshpae[1, 1:6:2] = [Nav[1], Nbv[1], Ncv[1]]
+        matshpae[2, 0:6] = [Nav[1], Nav[0], Nbv[1], Nbv[0], Ncv[1], Ncv[0]]
+        Ke = Ke + 1 / 2 * w * matshpae.T.dot(D).dot(matshpae) * abs(detJ)
     return Ke
 
 

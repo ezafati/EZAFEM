@@ -10,6 +10,9 @@ class GaussPoints:
     def __repr__(self):
         return f'{self.__class__.__name__}(gauss_set={self.gauss_coord}, weights={self.weights})'
 
+    def __len__(self):
+        return len(self.weights)
+
     def add_gauss_points(self, jlist: 'json file'):
         with open(jlist, 'r') as f:
             mates = json.load(f)
@@ -29,3 +32,5 @@ class GaussPoints:
                     self.weights = mates['weights']
             except KeyError:
                 raise KeyError(f'The provided material name {self.eltype} not found')
+
+

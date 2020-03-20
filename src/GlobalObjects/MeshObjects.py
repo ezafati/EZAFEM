@@ -1,5 +1,5 @@
 from typing import List, Tuple, Type
-from GlobalObjects.MatrixObjects import  MatrixObj, _mat_assembly_2d, VectObject
+from GlobalObjects.MatrixObjects import MatrixObj, _mat_assembly_2d, VectObject
 from GlobalObjects.MathUtils import GaussPoints
 from GlobalObjects.MaterialObjects import Material
 import numpy as np
@@ -86,7 +86,7 @@ class MeshObj(object):
         for part in self.parts:
             self.get_part_plist(part, file)
             self.get_part_topology(part, file)
-
+            part.get_part_material()
 
 
 class Part(MeshObj):
@@ -154,19 +154,23 @@ class Part(MeshObj):
         """Compute the strain-displacement components and the
         determinant of the Jacobian matrix for each element in the
         mesh"""
+        self.get_gauss_points()
         size_conn = self.conn.shape[1]
         vct_tmp = []
         for p in range(size_conn):
-            el = self.conn[:, p]
-            pa, pb, pc = [self.plist[p] for p in el]
-            J = np.zeros((2, 2), dtype=np.float64)  # init jacob matrix
-            J[0, 0] = -pa[1] + pc[1]
-            J[0, 1] = pa[1] - pb[1]
-            J[1, 0] = pa[0] - pc[0]
-            J[1, 1] = -pa[0] + pb[0]
-            detJ = J[0, 0] * J[1, 1] - J[0, 1] * J[1, 0]
-            Nav = J.dot(np.array([-1, -1])) / detJ  # Nav = (d(Na)/dx, d(Na)/dy)
-            Nbv = J.dot(np.array([1, 0])) / detJ
-            Ncv = J.dot(np.array([0, 1])) / detJ
-            vct_tmp.append([Nav, Nbv, Ncv, detJ])
+            shape_func = []
+            for gp in self.gauss_points.gauss_coord:
+                el = self.conn[:, p]
+                pa, pb, pc = [self.plist[p] for p in el]
+                J = np.zeros((2, 2), dtype=np.float64)  # init jacob matrix
+                J[0, 0] = -pa[1] + pc[1]
+                J[0, 1] = pa[1] - pb[1]
+                J[1, 0] = pa[0] - pc[0]
+                J[1, 1] = -pa[0] + pb[0]
+                detJ = J[0, 0] * J[1, 1] - J[0, 1] * J[1, 0]
+                Nav = J.dot(np.array([-1, -1])) / detJ  # Nav = (d(Na)/dx, d(Na)/dy)
+                Nbv = J.dot(np.array([1, 0])) / detJ
+                Ncv = J.dot(np.array([0, 1])) / detJ
+                shape_func.append((Nav, Nbv, Ncv, detJ))
+            vct_tmp.append(shape_func)
         self.shape_grad = vct_tmp
