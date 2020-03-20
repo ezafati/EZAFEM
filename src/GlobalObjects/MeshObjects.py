@@ -1,12 +1,14 @@
 from typing import List, Tuple, Type
-from GlobalObjects.MainObjects import Material, MatrixObj, _mat_assembly_2d, VectObject
-
+from GlobalObjects.MatrixObjects import  MatrixObj, _mat_assembly_2d, VectObject
+from GlobalObjects.MathUtils import GaussPoints
+from GlobalObjects.MaterialObjects import Material
 import numpy as np
 import os.path
 import yaml
 
 MAIN_YAML_PATH = os.path.join(os.path.split(os.path.dirname(__file__))[0], 'main.yml')
 MATERIAL_DB = os.path.join(os.path.split(os.path.dirname(__file__))[0], 'matdb/matdb.json')
+GAUSS_POINTS_JSON = os.path.join(os.path.split(os.path.dirname(__file__))[0], 'matdb/gauss.json')
 
 
 class MeshObj(object):
@@ -84,7 +86,7 @@ class MeshObj(object):
         for part in self.parts:
             self.get_part_plist(part, file)
             self.get_part_topology(part, file)
-            part.get_part_material()
+
 
 
 class Part(MeshObj):
@@ -111,7 +113,8 @@ class Part(MeshObj):
                f'probtype={self.probtype}, dim={self.dim})'
 
     def get_gauss_points(self):
-        pass
+        self.gauss_points = GaussPoints(eltype=self.eltype)
+        self.gauss_points.get_gauss_points(GAUSS_POINTS_JSON)
 
     def get_part_material(self):
         with open(MAIN_YAML_PATH, 'r') as f:
