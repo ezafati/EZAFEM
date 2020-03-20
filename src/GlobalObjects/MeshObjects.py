@@ -104,10 +104,14 @@ class Part(MeshObj):
         self.mate = mate
         self.shape_grad = gard
         self.defo_array = defoarray
+        self.gauss_points = None
 
     def __repr__(self):
         return f'{self.__class__.__name__}(label={self.label}, eltype={self.eltype}, mate={self.mate}, ' \
                f'probtype={self.probtype}, dim={self.dim})'
+
+    def get_gauss_points(self):
+        pass
 
     def get_part_material(self):
         with open(MAIN_YAML_PATH, 'r') as f:
