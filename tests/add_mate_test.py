@@ -1,5 +1,5 @@
 import os.path
-from GlobalObjects.MainObjects import Material
+from GlobalObjects.MatrixObjects import Material
 
 path1, *_ = os.path.split(os.path.abspath('./'))
 dbpath = os.path.join(path1, 'src/matdb/matdb.json')
