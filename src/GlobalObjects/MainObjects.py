@@ -1,11 +1,37 @@
 """"Main GlobalObjects """
 import json
-from typing import Tuple
-
-from scipy.sparse import coo_matrix
-
-from GlobalObjects import initialize_deco
+from typing import Tuple, Type
+from scipy.sparse import lil_matrix
 import numpy as np
+from GlobalObjects.StiffnessMatrixUtils import elem_stiff_matrix_tri3
+
+
+def _mat_assembly_2d(part, mtype, **kwargs):
+    nel = part.conn.shape[1]
+    nvert = part.conn.shape[0]  # number of vertexes by element
+    mat = eval(f'part.{mtype}mat')
+    for p in range(nel):
+        connel = part.conn[:, p]
+        Kel = eval(f'elem_{mtype}_matrix_{part.eltype}(p, part, **kwargs)')
+        for i in range(nvert):
+            for j in range(nvert):
+                mat[2 * connel[i]:2 * connel[i] + 2, 2 * connel[j]:2 * connel[j] + 2] = mat[
+                                                                                        2 * connel[i]:2 * connel[i] + 2,
+                                                                                        2 * connel[j]:2 * connel[
+                                                                                            j] + 2] + Kel[
+                                                                                                      2 * i:2 * i + 2,
+                                                                                                      2 * j:2 * j + 2]
+
+
+def _vct_assembly_2d(part, vtype, **kwargs):
+    nel = part.conn.shape[1]
+    nvert = part.conn.shape[0]  # number of vertexes by element
+    vct = eval(f'part.{vtype}vct')
+    for p in range(nel):
+        connel = part.conn[:, p]
+        vel = eval(f'elem_{vtype}_vect_{part.eltype}(p, part, **kwargs)')
+        for i in range(nvert):
+            vct.mat[2 * connel[i]:2 * connel[i] + 2] = vel[2 * i:2 * i + 2]
 
 
 class Material:
@@ -30,8 +56,10 @@ class Material:
         with open(db, 'r') as fdb:
             mates = json.load(fdb)[self.name]
             try:
-                self.cstprop = mates['cst_properties']
-                self.varprop = mates['var_properties']
+                if self.cstprop is None:
+                    self.cstprop = mates['cst_properties']
+                if self.varprop is None:
+                    self.varprop = mates['var_properties']
             except KeyError:
                 raise KeyError(f'The provided material name {self.name} not found')
 
@@ -56,46 +84,37 @@ class Interface:
         return 'not implemented'
 
 
-@initialize_deco
 class MatrixObj:
     def __init__(self, mtype: str):
         self.mtype = mtype
-        self.mat = coo_matrix((self.npts, self.npts), dtype=np.float32)
+        self.data = {}
 
-    def assembly(self, **kwargs):
-        return eval(f'{self}.assembly_{self.dim}(**{kwargs})')
+    def __get__(self, instance, owner):
+        if not instance:
+            return self
+        if instance not in self.data:
+            npt = instance.plist.shape[0]
+            dim = instance.dim
+            self.data[instance] = lil_matrix((dim * npt, dim * npt), dtype=np.float64)
+        return self.data.get(instance)
 
-    def assembly_2d(self, **kwargs):
-        nel = self.nel
-        nvert = self.npts
-        for p in range(nel):
-            connel = self.conn
-            Kel = eval(f'elem_{self.mtype}_matrix_{self.eltype}({connel}, **{kwargs})')
-            for i in range(nvert):
-                for j in range(nvert):
-                    self.mat[2 * connel[i]:2 * connel[i] + 2, 2 * connel[j]:2 * connel[j] + 2] = self.mat[
-                                                                                                 2 * connel[i]:2 *
-                                                                                                               connel[
-                                                                                                                   i] + 2,
-                                                                                                 2 * connel[j]:2 *
-                                                                                                               connel[
-                                                                                                                   j] + 2] + Kel[
-                                                                                                                             2 * i:2 * i + 2,
-                                                                                                                             2 * j:2 * j + 2]
+    def __set__(self, instance, value):
+        self.data[instance] = value
 
 
-@initialize_deco
 class VectObject:
     def __init__(self, vtype: str):
-        self.vtype = vtype
-        self.mat = coo_matrix((self.npts, 1), dtype=np.float32)
+        self.vtype = vtype  # vector type (force, ...)
+        self.data = {}
 
-    def assembly(self, **kwargs):
-        return eval(f'{self}.assembly_{self.dim}(**{kwargs})')
+    def __get__(self, instance, owner):
+        if not instance:
+            return self
+        if instance not in self.data:
+            npt = instance.plist.shape[0]
+            dim = instance.dim
+            self.data[instance] = lil_matrix((dim * npt, 1), dtype=np.float64)
+        return self.data.get(instance)
 
-    def assembly_2d(self, **kwargs):
-        nel = self.nel
-        nvert = self.npts
-        for p in range(nel):
-            connel = self.conn
-            Kel = eval(f'elem_{self.vtype}_vect_{self.eltype}({connel}, **{kwargs})')
+    def __set__(self, instance, value):
+        self.data[instance] = value

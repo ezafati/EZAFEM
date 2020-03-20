@@ -1,0 +1,10 @@
+---
+materials:
+    - part: PART1
+      type: Linear_Elastic
+    - part: PART2
+      type: Linear_Elastic
+
+
+
+

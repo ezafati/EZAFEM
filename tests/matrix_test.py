@@ -20,15 +20,10 @@ print(matt.shape[0])
 arr = lil_matrix(np.zeros(5))
 arr[0, 4] = 1
 
-res = np.array([1,2,3])
-print(res.dot(res))
-#print(arr)
-#print(mat.shape, arr.shape)
-#print(-arr.T*arr)
-#print((arr*arr.T)[0,0])
-#print(type(arr + np.zeros(5)))
-#print(res.shape)
-#print(lil_matrix(np.zeros((5,))).shape)
-#print(norm(arr, ord=np.inf))
-#print(type(np.inf))
+res = np.array([1, 2, 3])
+# print(res.dot(res))
 
+
+matr = lil_matrix((3,1))
+matr[1] = 1
+print(matr)
