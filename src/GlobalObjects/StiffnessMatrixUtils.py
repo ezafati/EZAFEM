@@ -1,6 +1,8 @@
 from typing import Tuple, Dict, Type
 
 import numpy as np
+from itertools import chain
+import importlib
 
 
 def hooke_plane_strain(youn: float, poi: float):
@@ -25,7 +27,12 @@ def hooke_plane_stress(youn: float, poi: float):
     return D
 
 
-def elem_stiff_matrix_tri3(p: int, part: 'Part'):
+def elem_stiff_matrix_tri3(p: int, part: 'Part') -> Type[np.ndarray]:
+    """"Compute the element stiffness matrix
+    part: instance of class Part
+    ind: index of the point gauss
+    return ndarray
+        """
     probtype = part.probtype
     youn = part.mate.cstprop['Young']
     poi = part.mate.cstprop['Poisson']
@@ -46,8 +53,27 @@ def elem_stiff_matrix_tri3(p: int, part: 'Part'):
 
 
 def elem_forc_vect_tri3(p: int, part: 'Part'):
-    Nav, Nbv, Ncv, detJ = part.shape_grad[p]
-    matshpae = np.zeros((3, 6), dtype=np.float64)  # init shape matrix
+    """"Compute the element force vector
+     p: index of the element in the connectivity matrix
+    part: instance of class Part"""
+    law_module = importlib.import_module(f'MaterialModels.{part.mate.name.lower()}')
+    law_func = law_module.__dict__['compute_sigma_internal']
+    for ind in range(len(part.gauss_points)):
+        eps = compute_def_tensor_tri3(p, part, ind)
+        law_func(eps, part.mate)
+
+
+def compute_def_tensor_tri3(p: int, part: 'Part', ind: int) -> Type[np.array]:
+    """Compute the deformation vector in the Voigt notation
+    p: index of the element in the connectivity matrix
+    part: instance of class Part
+    ind: index of the point gauss """
+    el = part.conn[:, p]
+    listindx = map(lambda l: [part.dim * l, part.dim * l + 1], el)
+    eldisp = part.dispvct[list(chain(*listindx))]
+    matshpae = np.zeros((3, part.dim * part.nbvertx), dtype=np.float64)
+    Nav, Nbv, Ncv, detJ = part.shape_grad[p][ind]
     matshpae[0, 0:6:2] = [Nav[0], Nbv[0], Ncv[0]]
     matshpae[1, 1:6:2] = [Nav[1], Nbv[1], Ncv[1]]
     matshpae[2, 0:6] = [Nav[1], Nav[0], Nbv[1], Nbv[0], Ncv[1], Ncv[0]]
+    return matshpae.dot(eldisp)

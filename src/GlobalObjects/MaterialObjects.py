@@ -19,7 +19,7 @@ class Material:
         with open(db, 'w') as fdb:
             json.dump(mates, fdb, indent=2)
 
-    def get_material(self, db):
+    def get_material(self, db, nel):
         with open(db, 'r') as fdb:
             mates = json.load(fdb)[self.name]
             try:

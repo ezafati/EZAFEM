@@ -54,7 +54,7 @@ class Interface:
 class MatrixObj:
     def __init__(self, mtype: str):
         self.mtype = mtype
-        self.data = {}
+        self.data = {}  # to store the matrix for each part in the mesh
 
     def __get__(self, instance, owner):
         if not instance:
@@ -80,7 +80,7 @@ class VectObject:
         if instance not in self.data:
             npt = instance.plist.shape[0]
             dim = instance.dim
-            self.data[instance] = lil_matrix((dim * npt, 1), dtype=np.float64)
+            self.data[instance] = np.ndarray((dim * npt, ), dtype=np.float64)
         return self.data.get(instance)
 
     def __set__(self, instance, value):
