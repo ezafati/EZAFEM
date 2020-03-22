@@ -39,7 +39,7 @@ def elem_stiff_matrix_tri3(p: int, part: 'Part', **kwargs) -> Type[np.ndarray]:
         """
     probtype = part.probtype
     Ke = np.zeros((part.dim * part.nbvertx, part.dim * part.nbvertx), dtype=np.float64)
-    matshpae = np.zeros((3, part.dim * part.nbvertx), dtype=np.float64)
+    matshape = np.zeros((3, part.dim * part.nbvertx), dtype=np.float64)
     try:
         update_type = kwargs['UPDATE']  # update_type take SECANT or TANGENT
         law_module = importlib.import_module(f'MaterialModels.{part.mate.name.lower()}')
@@ -50,10 +50,10 @@ def elem_stiff_matrix_tri3(p: int, part: 'Part', **kwargs) -> Type[np.ndarray]:
             D = hooke_func(eps, part.mate.cstprop[:, p], part.mate.varprop[ind, :, p])
             w = part.gauss_points.weights[ind]
             Nav, Nbv, Ncv, detJ = part.shape_grad[p][ind]
-            matshpae[0, 0:6:2] = [Nav[0], Nbv[0], Ncv[0]]
-            matshpae[1, 1:6:2] = [Nav[1], Nbv[1], Ncv[1]]
-            matshpae[2, 0:6] = [Nav[1], Nav[0], Nbv[1], Nbv[0], Ncv[1], Ncv[0]]
-            Ke = Ke + 1 / 2 * w * matshpae.T.dot(D).dot(matshpae) * abs(detJ)
+            matshape[0, 0:6:2] = [Nav[0], Nbv[0], Ncv[0]]
+            matshape[1, 1:6:2] = [Nav[1], Nbv[1], Ncv[1]]
+            matshape[2, 0:6] = [Nav[1], Nav[0], Nbv[1], Nbv[0], Ncv[1], Ncv[0]]
+            Ke = Ke + 1 / 2 * w * matshape.T.dot(D).dot(matshape) * abs(detJ)
     except KeyError:
         if probtype == 'STRESS':
             D = hooke_plane_stress(cstprop=part.mate.cstprop[:, p])
@@ -63,10 +63,10 @@ def elem_stiff_matrix_tri3(p: int, part: 'Part', **kwargs) -> Type[np.ndarray]:
         for ind in range(len(part.gauss_points)):
             w = part.gauss_points.weights[ind]
             Nav, Nbv, Ncv, detJ = part.shape_grad[p][ind]
-            matshpae[0, 0:6:2] = [Nav[0], Nbv[0], Ncv[0]]
-            matshpae[1, 1:6:2] = [Nav[1], Nbv[1], Ncv[1]]
-            matshpae[2, 0:6] = [Nav[1], Nav[0], Nbv[1], Nbv[0], Ncv[1], Ncv[0]]
-            Ke = Ke + 1 / 2 * w * matshpae.T.dot(D).dot(matshpae) * abs(detJ)
+            matshape[0, 0:6:2] = [Nav[0], Nbv[0], Ncv[0]]
+            matshape[1, 1:6:2] = [Nav[1], Nbv[1], Ncv[1]]
+            matshape[2, 0:6] = [Nav[1], Nav[0], Nbv[1], Nbv[0], Ncv[1], Ncv[0]]
+            Ke += 1 / 2 * w * matshape.T.dot(D).dot(matshape) * abs(detJ)
     return Ke
 
 
@@ -74,18 +74,24 @@ def elem_forc_vect_tri3(p: int, part: 'Part'):
     """"Compute the element force vector
      p: index of the element in the connectivity matrix
     part: instance of class Part"""
+    matshape = np.zeros((3, part.dim * part.nbvertx), dtype=np.float64)
+    elforc = np.zeros((part.dim * part.nbvertx,), dtype=np.float64)
     law_module = importlib.import_module(f'MaterialModels.{part.mate.name.lower()}')
     law_func = law_module.__dict__['compute_sigma_internal']
     for ind in range(len(part.gauss_points)):
+        w = part.gauss_points.weights[ind]
         eps = compute_def_tensor_tri3(p, part, ind)
         part.eps_array[ind, :, p] = eps
-        print(type(eps), type(part.mate.cstprop[:, p]), type(part.probtype))
         try:
-            result = law_func(eps=eps, cstprop=part.mate.cstprop[:, p], varprop=part.mate.varprop[ind, :, p],
-                              probtype=part.probtype)
+            sig, varprop = law_func(eps=eps, cstprop=part.mate.cstprop[:, p], varprop=part.mate.varprop[ind, :, p],
+                                    probtype=part.probtype)
         except TypeError:
-            result = law_func(eps=eps, cstprop=part.mate.cstprop[:, p], probtype=part.probtype)
-        print(result)
+            sig, _ = law_func(eps=eps, cstprop=part.mate.cstprop[:, p], probtype=part.probtype)
+        Nav, Nbv, Ncv, detJ = part.shape_grad[p][ind]
+        matshape[0, 0:6:2] = [Nav[0], Nbv[0], Ncv[0]]
+        matshape[1, 1:6:2] = [Nav[1], Nbv[1], Ncv[1]]
+        matshape[2, 0:6] = [Nav[1], Nav[0], Nbv[1], Nbv[0], Ncv[1], Ncv[0]]
+        elforc += 1 / 2 * w * matshape.T.dot(sig) * abs(detJ)
 
 
 def compute_def_tensor_tri3(p: int, part: 'Part', ind: int) -> Type[np.array]:
@@ -94,11 +100,11 @@ def compute_def_tensor_tri3(p: int, part: 'Part', ind: int) -> Type[np.array]:
     part: instance of class Part
     ind: index of the point gauss """
     el = part.conn[:, p]
-    listindx = map(lambda l: [part.dim * l, part.dim * l + 1], el)
+    listindx = list(map(lambda l: [part.dim * l, part.dim * l + 1], el))
     eldisp = part.dispvct[list(chain(*listindx))]
-    matshpae = np.zeros((3, part.dim * part.nbvertx), dtype=np.float64)
+    matshape = np.zeros((3, part.dim * part.nbvertx), dtype=np.float64)
     Nav, Nbv, Ncv, detJ = part.shape_grad[p][ind]
-    matshpae[0, 0:6:2] = [Nav[0], Nbv[0], Ncv[0]]
-    matshpae[1, 1:6:2] = [Nav[1], Nbv[1], Ncv[1]]
-    matshpae[2, 0:6] = [Nav[1], Nav[0], Nbv[1], Nbv[0], Ncv[1], Ncv[0]]
-    return matshpae.dot(eldisp)
+    matshape[0, 0:6:2] = [Nav[0], Nbv[0], Ncv[0]]
+    matshape[1, 1:6:2] = [Nav[1], Nbv[1], Ncv[1]]
+    matshape[2, 0:6] = [Nav[1], Nav[0], Nbv[1], Nbv[0], Ncv[1], Ncv[0]]
+    return matshape.dot(eldisp)
