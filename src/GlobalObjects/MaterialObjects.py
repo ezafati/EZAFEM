@@ -1,4 +1,7 @@
 import json
+import sys
+
+import numpy as np
 
 
 class Material:
@@ -19,14 +22,31 @@ class Material:
         with open(db, 'w') as fdb:
             json.dump(mates, fdb, indent=2)
 
-    def get_material(self, db, nel):
+    def get_material(self, db, nel, ngp):
         with open(db, 'r') as fdb:
             mates = json.load(fdb)[self.name]
             try:
                 if self.cstprop is None:
-                    self.cstprop = mates['cst_properties']
+                    cstprop = mates['cst_properties']
+                    ncst = len(cstprop.keys())
+                    self.cstprop = np.ndarray((ncst, nel), dtype=np.float32)
+                    for p in range(nel):
+                        try:
+                            self.cstprop[0, p] = cstprop['Young']
+                            self.cstprop[1, p] = cstprop['Poisson']
+                        except KeyError:
+                            sys.exit('Young modulus and the Poisson ratio should be provided ')
+                        self.cstprop[2:ncst, p] = [cstprop[key] for key in cstprop.keys() if key != 'Young' and key !=
+                                                   'Poisson']
                 if self.varprop is None:
-                    self.varprop = mates['var_properties']
+                    varprop = mates['var_properties']
+                    if varprop is not None:
+                        ncst = len(varprop.keys())
+                        if ncst:
+                            self.varprop = np.ndarray((ngp, ncst, nel), dtype=np.float32)
+                            for p in range(nel):
+                                for ind in range(ngp):
+                                    self.varprop[ind, :, p] = [varprop[key] for key in varprop.keys()]
             except KeyError:
                 raise KeyError(f'The provided material name {self.name} not found')
 

@@ -86,7 +86,9 @@ class MeshObj(object):
         for part in self.parts:
             self.get_part_plist(part, file)
             self.get_part_topology(part, file)
+            part.grad_shape_array()
             part.get_part_material()
+            part.initiliaze_eps_array()
 
 
 class Part(MeshObj):
@@ -107,10 +109,16 @@ class Part(MeshObj):
         self.shape_grad = gard
         self.defo_array = defoarray
         self.gauss_points = None
+        self.eps_array = None
 
     def __repr__(self):
         return f'{self.__class__.__name__}(label={self.label}, eltype={self.eltype}, mate={self.mate}, ' \
                f'probtype={self.probtype}, dim={self.dim})'
+
+    def initiliaze_eps_array(self):
+        ngp = len(self.gauss_points)
+        nel = self.conn.shape[1]
+        self.eps_array = np.ndarray((ngp, 3, nel), dtype=np.float64)
 
     def get_gauss_points(self):
         self.gauss_points = GaussPoints(eltype=self.eltype)
@@ -125,19 +133,11 @@ class Part(MeshObj):
                 if p['part'] == self.label:
                     self.mate = Material()
                     self.mate.name = p['type']
-                    self.mate.get_material(MATERIAL_DB)
-                    try:
-                        self.mate.cstprop = p['cstprop']
-                    except KeyError:
-                        pass
-                    try:
-                        self.mate.varprop = p['varprop']
-                    except KeyError:
-                        pass
+                    self.mate.get_material(MATERIAL_DB, self.conn.shape[1], len(self.gauss_points))
         except KeyError:
             print("DEFAULT MATERIAL WILL BE ASSIGNED TO THE PARTS")
             self.mate = Material(name='Linear_Elastic')
-            self.mate.get_material(MATERIAL_DB)
+            self.mate.get_material(MATERIAL_DB, self.conn.shape[1])
 
     def mat_assembly(self, mtype, **kwargs):
         """assembly matrix according to the
