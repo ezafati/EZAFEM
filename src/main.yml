@@ -1,9 +1,9 @@
 ---
 materials:
     - part: PART1
-      type: Linear_Elastic
+      type: Linear_Elastic_ISO
     - part: PART2
-      type: Linear_Elastic
+      type: Linear_Elastic_ISO
 
 
 

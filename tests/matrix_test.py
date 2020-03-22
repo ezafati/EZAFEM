@@ -17,13 +17,17 @@ print(mat.indices)
 
 matt = mat.copy()
 print(matt.shape[0])
-arr = lil_matrix(np.zeros(5))
+arr = np.zeros((5,5))
 arr[0, 4] = 1
 
 res = np.array([1, 2, 3])
 # print(res.dot(res))
 
 
-matr = lil_matrix((3,1))
-matr[1] = 1
-print(matr)
+b = lil_matrix([1,2,3,4,5]).T
+print(b.shape)
+
+result = arr.dot(b.toarray())
+
+print(type(result), arr.shape, result.shape)
+print(type(result[2]))

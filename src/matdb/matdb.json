@@ -1,6 +1,6 @@
 {
   "DATABASE_VERSION": "1.0.0",
-  "Linear_Elastic": {
+  "Linear_Elastic_ISO": {
     "cst_properties": {
       "Young": 1000000000.0,
       "Poisson": 0.25

@@ -1,5 +1,4 @@
 """"Main GlobalObjects """
-import json
 from typing import Tuple, Type
 from scipy.sparse import lil_matrix
 import numpy as np
@@ -15,12 +14,8 @@ def _mat_assembly_2d(part, mtype, **kwargs):
         Kel = eval(f'elem_{mtype}_matrix_{part.eltype}(p, part, **kwargs)')
         for i in range(nvert):
             for j in range(nvert):
-                mat[2 * connel[i]:2 * connel[i] + 2, 2 * connel[j]:2 * connel[j] + 2] = mat[
-                                                                                        2 * connel[i]:2 * connel[i] + 2,
-                                                                                        2 * connel[j]:2 * connel[
-                                                                                            j] + 2] + Kel[
-                                                                                                      2 * i:2 * i + 2,
-                                                                                                      2 * j:2 * j + 2]
+                mat[2 * connel[i]:2 * connel[i] + 2, 2 * connel[j]:2 * connel[j] + 2] += Kel[2 * i:2 * i + 2,
+                                                                                         2 * j:2 * j + 2]
 
 
 def _vct_assembly_2d(part, vtype, **kwargs):
@@ -54,7 +49,7 @@ class Interface:
 class MatrixObj:
     def __init__(self, mtype: str):
         self.mtype = mtype
-        self.data = {}
+        self.data = {}  # to store the matrix for each part in the mesh
 
     def __get__(self, instance, owner):
         if not instance:
@@ -80,7 +75,7 @@ class VectObject:
         if instance not in self.data:
             npt = instance.plist.shape[0]
             dim = instance.dim
-            self.data[instance] = lil_matrix((dim * npt, 1), dtype=np.float64)
+            self.data[instance] = np.ndarray((dim * npt,), dtype=np.float64)
         return self.data.get(instance)
 
     def __set__(self, instance, value):

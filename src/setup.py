@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
     name='EZAFEM',
     version='',
-    packages=['GlobalObjects', 'MateriaModels'],
+    packages=['GlobalObjects', 'MaterialModels'],
     package_dir={'': 'src'},
     url='',
     license='',
