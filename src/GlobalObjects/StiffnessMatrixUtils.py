@@ -81,12 +81,12 @@ def elem_forc_vect_tri3(p: int, part: 'Part'):
     for ind in range(len(part.gauss_points)):
         w = part.gauss_points.weights[ind]
         eps = compute_def_tensor_tri3(p, part, ind)
-        part.eps_array[ind, :, p] = eps
         try:
-            sig, varprop = law_func(eps=eps, cstprop=part.mate.cstprop[:, p], varprop=part.mate.varprop[ind, :, p],
+            sig, eps, varprop = law_func(eps=eps, cstprop=part.mate.cstprop[:, p], varprop=part.mate.varprop[ind, :, p],
                                     probtype=part.probtype)
         except TypeError:
-            sig, _ = law_func(eps=eps, cstprop=part.mate.cstprop[:, p], probtype=part.probtype)
+            sig, eps, _ = law_func(eps=eps, cstprop=part.mate.cstprop[:, p], probtype=part.probtype)
+        part.eps_array[ind, :, p] = eps
         Nav, Nbv, Ncv, detJ = part.shape_grad[p][ind]
         matshape[0, 0:6:2] = [Nav[0], Nbv[0], Ncv[0]]
         matshape[1, 1:6:2] = [Nav[1], Nbv[1], Ncv[1]]
