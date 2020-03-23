@@ -75,6 +75,53 @@ class MeshObj(object):
             except StopIteration:
                 pass
 
+    @staticmethod
+    def get_part_boundary(part, file):
+        with open(file, 'r') as f:
+            try:
+                while True:
+                    line = next(f)
+                    try:
+                        if line.split(' ')[1].strip() == part.label:
+                            while True:
+                                line = next(f)
+                                if line.strip() == 'NAMED_BOUNDARIES':
+                                    size = int(next(f).split(' ')[1])
+                                    part.bound = Boundary()
+                                    for _ in range(size):
+                                        bd = next(f).strip()
+                                        lpt = next(f).split(',')
+                                        part.bound.bound_data[bd] = [int(p) for p in lpt]
+                                    break
+                            break
+                    except IndexError:
+                        pass
+            except StopIteration:
+                pass
+
+    @staticmethod
+    def get_part_points(part, file):
+        with open(file, 'r') as f:
+            try:
+                while True:
+                    line = next(f)
+                    try:
+                        if line.split(' ')[1].strip() == part.label:
+                            while True:
+                                line = next(f)
+                                if line.strip() == 'NAMED_POINTS':
+                                    size = int(next(f).split(' ')[1])
+                                    part.bound = Boundary()
+                                    for _ in range(size):
+                                        pt, *_, npt = next(f).split(' ')
+                                        part.bound.point_data[pt] = int(npt)
+                                    break
+                            break
+                    except IndexError:
+                        pass
+            except StopIteration:
+                pass
+
     def read_ezamesh(self, file):
         """Read  mesh file from EZAMESH
         and fill all the attributes of the instance"""
@@ -86,6 +133,8 @@ class MeshObj(object):
         for part in self.parts:
             self.get_part_plist(part, file)
             self.get_part_topology(part, file)
+            self.get_part_boundary(part, file)
+            self.get_part_points(part, file)
             part.grad_shape_array()
             part.get_part_material()
             part.initiliaze_eps_array()
@@ -110,10 +159,11 @@ class Part(MeshObj):
         self.defo_array = defoarray
         self.gauss_points = None
         self.eps_array = None
+        self.bound = None
 
     def __repr__(self):
         return f'{self.__class__.__name__}(label={self.label}, eltype={self.eltype}, mate={self.mate}, ' \
-               f'probtype={self.probtype}, dim={self.dim})'
+               f'probtype={self.probtype}, dim={self.dim}, bound={self.bound})'
 
     def initiliaze_eps_array(self):
         ngp = len(self.gauss_points)
@@ -159,7 +209,7 @@ class Part(MeshObj):
         vct_tmp = []
         for p in range(size_conn):
             shape_func = []
-            for gp in self.gauss_points.gauss_coord:
+            for _ in self.gauss_points.gauss_coord:
                 el = self.conn[:, p]
                 pa, pb, pc = [self.plist[p] for p in el]
                 J = np.zeros((2, 2), dtype=np.float64)  # init jacob matrix
@@ -174,3 +224,25 @@ class Part(MeshObj):
                 shape_func.append((Nav, Nbv, Ncv, detJ))
             vct_tmp.append(shape_func)
         self.shape_grad = vct_tmp
+
+
+class Boundary:
+    """class describing the boundray conditions"""
+
+    def __init__(self):
+        self.bound_data = {}
+        self.point_data = {}
+        self.forc_impos = None
+        self.disp_impos = None
+
+
+class Interface:
+    def __init__(self, itype: str = None, dom1: Tuple[str] = None, dom2: Tuple[str] = None):
+        self.type = itype
+        self.domA = dom1
+        self.domB = dom2
+
+    def make_link_matrices(self):
+        """C=return tuple contains the link matrices
+        corresponding to the interface A-B"""
+        return 'not implemented'
