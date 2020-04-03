@@ -83,7 +83,7 @@ def elem_forc_vect_tri3(p: int, part: 'Part'):
         eps = compute_def_tensor_tri3(p, part, ind)
         try:
             sig, eps, varprop = law_func(eps=eps, cstprop=part.mate.cstprop[:, p], varprop=part.mate.varprop[ind, :, p],
-                                    probtype=part.probtype)
+                                         probtype=part.probtype)
         except TypeError:
             sig, eps, _ = law_func(eps=eps, cstprop=part.mate.cstprop[:, p], probtype=part.probtype)
         part.eps_array[ind, :, p] = eps

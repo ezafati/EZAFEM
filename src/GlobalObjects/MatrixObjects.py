@@ -29,23 +29,6 @@ def _vct_assembly_2d(part, vtype, **kwargs):
             vct.mat[2 * connel[i]:2 * connel[i] + 2] = vel[2 * i:2 * i + 2]
 
 
-class Boundary:
-    """class describing the boundray conditions"""
-    pass
-
-
-class Interface:
-    def __init__(self, itype: str = None, dom1: Tuple[str] = None, dom2: Tuple[str] = None):
-        self.type = itype
-        self.domA = dom1
-        self.domB = dom2
-
-    def make_link_matrices(self):
-        """C=return tuple contains the link matrices
-        corresponding to the interface A-B"""
-        return 'not implemented'
-
-
 class MatrixObj:
     def __init__(self, mtype: str):
         self.mtype = mtype
