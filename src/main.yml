@@ -1,9 +1,19 @@
 ---
-materials:
+parts:
     - part: PART1
-      type: Linear_Elastic_ISO
+      physic: SOLID
+      probtype: STRESS
+      mesh:
+        element_type: TRI3
+      material: 
+        - type: Linear_Elastic_ISO
     - part: PART2
-      type: Linear_Elastic_ISO
+      physic: SOLID
+      probtype: STRESS
+      mesh:
+        element_type: TRI6
+      material:
+        - type: Linear_Elastic_ISO
 
 
 
