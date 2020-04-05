@@ -8,7 +8,7 @@ def compute_sigma_internal(eps: 'Array', cstprop: 'Array' = None, varprop: 'Arra
         D = hooke_plane_stress(cstprop=cstprop)
     else:
         D = hooke_plane_strain(cstprop=cstprop)
-    sig = D.dot(eps)
+    sig = D.dot(eps[0:3])
     return sig, eps, None
 
 

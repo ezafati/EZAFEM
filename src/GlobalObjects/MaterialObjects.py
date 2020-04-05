@@ -11,7 +11,8 @@ class Material:
         self.varprop = var
 
     def __repr__(self):
-        return f'{self.__class__.__name__}(name={self.name}, cst={self.cstprop}, var={self.varprop})'
+        return f'{self.__class__.__name__}(name={self.name}, cst={self.cstprop.__class__.__name__}, ' \
+               f'var={self.varprop.__class__.__name__}) '
 
     def add_material(self, db: 'json file'):
         with open(db, 'r') as fdb:

@@ -1,3 +1,4 @@
+import sys
 from typing import List, Tuple, Type
 from GlobalObjects.MatrixObjects import MatrixObj, _mat_assembly_2d, VectObject
 from GlobalObjects.MathUtils import GaussPoints
@@ -68,7 +69,7 @@ class MeshObj(object):
                                         part.conn = np.ndarray(shape=(part.nbvertx, size), dtype=np.int)
                                         for nel in range(size):
                                             el = next(f).split(' ')
-                                            part.conn[:, nel] = [int(el[p+1]) for p in range(part.nbvertx)]
+                                            part.conn[:, nel] = [int(el[p + 1]) for p in range(part.nbvertx)]
                                         break
                                 break
                     except IndexError:
@@ -84,17 +85,18 @@ class MeshObj(object):
                     line = next(f)
                     try:
                         if line.split(' ')[1].strip() == part.label:
-                            while True:
-                                line = next(f)
-                                if line.strip() == 'NAMED_BOUNDARIES':
-                                    size = int(next(f).split(' ')[1])
-                                    part.bound = Boundary()
-                                    for _ in range(size):
-                                        bd = next(f).strip()
-                                        lpt = next(f).split(',')
-                                        part.bound.bound_data[bd] = [int(p) for p in lpt]
-                                    break
-                            break
+                            if next(f).split(' ')[1].strip() == part.eltype:
+                                while True:
+                                    line = next(f)
+                                    if line.strip() == 'NAMED_BOUNDARIES':
+                                        size = int(next(f).split(' ')[1])
+                                        part.bound = Boundary()
+                                        for _ in range(size):
+                                            bd = next(f).strip()
+                                            lpt = next(f).split(',')
+                                            part.bound.bound_data[bd] = [int(p) for p in lpt]
+                                        break
+                                break
                     except IndexError:
                         pass
             except StopIteration:
@@ -108,16 +110,17 @@ class MeshObj(object):
                     line = next(f)
                     try:
                         if line.split(' ')[1].strip() == part.label:
-                            while True:
-                                line = next(f)
-                                if line.strip() == 'NAMED_POINTS':
-                                    size = int(next(f).split(' ')[1])
-                                    part.bound = Boundary()
-                                    for _ in range(size):
-                                        pt, *_, npt = next(f).split(' ')
-                                        part.bound.point_data[pt] = int(npt)
-                                    break
-                            break
+                            if next(f).split(' ')[1].strip() == part.eltype:
+                                while True:
+                                    line = next(f)
+                                    if line.strip() == 'NAMED_POINTS':
+                                        size = int(next(f).split(' ')[1])
+                                        part.bound = Boundary()
+                                        for _ in range(size):
+                                            pt, *_, npt = next(f).split(' ')
+                                            part.bound.point_data[pt] = int(npt)
+                                        break
+                                break
                     except IndexError:
                         pass
             except StopIteration:
@@ -131,11 +134,8 @@ class MeshObj(object):
         for part in self.parts:
             self.get_part_plist(part, file)
             self.get_part_topology(part, file)
-            # self.get_part_boundary(part, file)
-            # self.get_part_points(part, file)
-            # part.grad_shape_array()
-            # part.get_part_material()
-            # part.initiliaze_eps_array()
+            self.get_part_boundary(part, file)
+            self.get_part_points(part, file)
 
 
 class SolidPart(MeshObj):
@@ -170,24 +170,29 @@ class SolidPart(MeshObj):
         return f'{self.__class__.__name__}(label={self.label}, eltype={self.eltype}, mate={self.mate}, ' \
                f'probtype={self.probtype}, dim={self.dim}, bound={self.bound})'
 
+    def initiate(self):
+        self.grad_shape_array()
+        self.get_part_material()
+        self.initiliaze_eps_array()
+
     def initiliaze_eps_array(self):
         ngp = len(self.gauss_points)
         nel = self.conn.shape[1]
-        self.eps_array = np.ndarray((ngp, 3, nel), dtype=np.float64)
+        self.eps_array = np.ndarray((ngp, 4, nel), dtype=np.float64)
 
     def get_gauss_points(self):
-        self.gauss_points = GaussPoints(eltype=self.eltype)
+        self.gauss_points = GaussPoints(eltype=self.eltype.lower())
         self.gauss_points.get_gauss_points(GAUSS_POINTS_JSON)
 
     def get_part_material(self):  # to modify
         with open(MAIN_YAML_PATH, 'r') as f:
             d = yaml.load(f.read(), Loader=yaml.Loader)
         try:
-            mat_list = d['materials']
-            for p in mat_list:
+            part_list = d['parts']
+            for p in part_list:
                 if p['part'] == self.label:
                     self.mate = Material()
-                    self.mate.name = p['type']
+                    self.mate.name = p['material']['type']
                     self.mate.get_material(MATERIAL_DB, self.conn.shape[1], len(self.gauss_points))
         except KeyError:
             print("DEFAULT MATERIAL WILL BE ASSIGNED TO THE PARTS")
@@ -203,7 +208,7 @@ class SolidPart(MeshObj):
     def grad_shape_array(self):
         """"compute the gradient shape array
         """
-        eval(f'self.grad_shape_array_{self.eltype}()')
+        eval(f'self.grad_shape_array_{self.eltype.lower()}()')
 
     def grad_shape_array_tri3(self):
         """Compute the strain-displacement components and the

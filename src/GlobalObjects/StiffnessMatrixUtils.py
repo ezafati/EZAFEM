@@ -107,4 +107,5 @@ def compute_def_tensor_tri3(p: int, part: 'Part', ind: int) -> Type[np.array]:
     matshape[0, 0:6:2] = [Nav[0], Nbv[0], Ncv[0]]
     matshape[1, 1:6:2] = [Nav[1], Nbv[1], Ncv[1]]
     matshape[2, 0:6] = [Nav[1], Nav[0], Nbv[1], Nbv[0], Ncv[1], Ncv[0]]
-    return matshape.dot(eldisp)
+    part.eps_array[ind, 0:3, p] = matshape.dot(eldisp)
+    return part.eps_array[ind, :, p]
