@@ -6,7 +6,7 @@ parts:
       mesh:
         element_type: TRI3
       material: 
-        - type: Linear_Elastic_ISO
+        type: Linear_Elastic_ISO
     - part: PART2
       physic: SOLID
       probtype: STRESS

@@ -11,7 +11,7 @@ def _mat_assembly_2d(part, mtype, **kwargs):
     mat = eval(f'part.{mtype}mat')
     for p in range(nel):
         connel = part.conn[:, p]
-        Kel = eval(f'elem_{mtype}_matrix_{part.eltype}(p, part, **kwargs)')
+        Kel = eval(f'elem_{mtype}_matrix_{part.eltype.lower()}(p, part, **kwargs)')
         for i in range(nvert):
             for j in range(nvert):
                 mat[2 * connel[i]:2 * connel[i] + 2, 2 * connel[j]:2 * connel[j] + 2] += Kel[2 * i:2 * i + 2,
