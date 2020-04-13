@@ -5,7 +5,8 @@ import numpy as np
 from GlobalObjects.StiffnessMatrixUtils import elem_stiff_matrix_tri3
 
 
-def _mat_assembly_2d(part, mtype, **kwargs):
+def _mat_assembly_2d(part: Type['Part'], mtype: str, **kwargs):
+    """assembly 2D matrices"""
     nel = part.conn.shape[1]
     nvert = part.conn.shape[0]  # number of vertexes by element
     mat = eval(f'part.{mtype}mat')
@@ -18,7 +19,8 @@ def _mat_assembly_2d(part, mtype, **kwargs):
                                                                                          2 * j:2 * j + 2]
 
 
-def _vct_assembly_2d(part, vtype, **kwargs):
+def _vct_assembly_2d(part: Type['Part'], vtype: str, **kwargs):
+    """Assembly 1D array"""
     nel = part.conn.shape[1]
     nvert = part.conn.shape[0]  # number of vertexes by element
     vct = eval(f'part.{vtype}vct')
@@ -59,6 +61,24 @@ class VectObject:
             npt = instance.plist.shape[0]
             dim = instance.dim
             self.data[instance] = np.ndarray((dim * npt,), dtype=np.float64)
+        return self.data.get(instance)
+
+    def __set__(self, instance, value):
+        self.data[instance] = value
+
+
+class LinkMatrixObj:
+    def __init__(self, mtype: str):
+        self.mtype = mtype
+        self.data = {}  # to store the matrix for each part in the mesh
+
+    def __get__(self, instance, owner):
+        if not instance:
+            return self
+        if instance not in self.data:
+            npt = instance.plist.shape[0]
+            dim = instance.dim
+            self.data[instance] = lil_matrix((dim * npt, dim * npt), dtype=np.float64)
         return self.data.get(instance)
 
     def __set__(self, instance, value):

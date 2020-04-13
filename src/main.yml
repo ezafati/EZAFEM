@@ -15,6 +15,14 @@ parts:
       material:
         - type: Linear_Elastic_ISO
 
+boundary:
+  - type: PerfectInterface
+    parts:
+      - part: PART1
+        bound: L1
+      - part: PART2
+        bound: L1
+
 
 
 
