@@ -1,5 +1,5 @@
 from typing import List, Tuple, Type
-from GlobalObjects.MatrixObjects import MatrixObj, _mat_assembly_2d, VectObject
+from GlobalObjects.MatrixObjects import MatrixObj, mat_assembly_2d, VectObject
 from GlobalObjects.MathUtils import GaussPoints
 from GlobalObjects.MaterialObjects import Material
 from GlobalObjects.BoundaryObjects import Boundary, PerfectInterface
@@ -203,6 +203,7 @@ class SolidPart(MeshObj):
                f'probtype={self.probtype}, dim={self.dim}, bound={self.bound})'
 
     def initiate(self):
+        """initialize the solid part"""
         self.grad_shape_array()
         self.get_part_material()
         self.initiliaze_eps_array()
@@ -235,7 +236,7 @@ class SolidPart(MeshObj):
         """assembly matrix according to the
         matrix type"""
         mat = eval(f'self.{mtype}mat')
-        eval(f'_mat_assembly_{self.dim}d(self, mtype, **kwargs)')
+        eval(f'mat_assembly_{self.dim}d(self, mtype, **kwargs)')
 
     def grad_shape_array(self):
         """"compute the gradient shape array

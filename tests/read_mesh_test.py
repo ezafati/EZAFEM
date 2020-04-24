@@ -1,4 +1,4 @@
-from GlobalObjects import MeshObj
+from GlobalObjects import *
 from GlobalObjects.StiffnessMatrixUtils import compute_def_tensor_tri3, elem_forc_vect_tri3
 import os
 
@@ -15,5 +15,4 @@ parts[0].initiate()
 # grad = part.grad_shape_array()
 parts[0].mat_assembly(mtype='stiff')
 elem_forc_vect_tri3(10, parts[0])
-
 mymesh.add_boundary(MAIN_YAML_PATH)

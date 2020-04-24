@@ -5,7 +5,7 @@ import numpy as np
 from GlobalObjects.StiffnessMatrixUtils import elem_stiff_matrix_tri3
 
 
-def _mat_assembly_2d(part: Type['Part'], mtype: str, **kwargs):
+def mat_assembly_2d(part: Type['Part'], mtype: str, **kwargs):  # to change and be independent of dimension
     """assembly 2D matrices"""
     nel = part.conn.shape[1]
     nvert = part.conn.shape[0]  # number of vertexes by element
@@ -68,8 +68,7 @@ class VectObject:
 
 
 class LinkMatrixObj:
-    def __init__(self, mtype: str):
-        self.mtype = mtype
+    def __init__(self):
         self.data = {}  # to store the matrix for each part in the mesh
 
     def __get__(self, instance, owner):
