@@ -23,7 +23,7 @@ def cg_method(x: 'Array', mat: Type[csr_matrix], b: 'Array', **kwargs):
     while ratio > eps and count < 100:
         fact = mat * p
         alpha = r.T.dot(r) / p.T.dot(fact)
-        x = x + alpha * p
+        x += alpha * p
         rp = r + alpha * fact
         beta = rp.T.dot(rp) / r.T.dot(r)
         p = -rp + beta * p
@@ -45,9 +45,9 @@ def precond_ic(mat: Type[csr_matrix]):
         for k in indices[indptr[i]:indptr[i + 1]]:
             if k < i:
                 count += 1
-                M[i, k] = M[i, k] / M[k, k]
+                M[i, k] /= M[k, k]
                 for j in indices[indptr[i] + count:indptr[i + 1]]:
-                    M[i, j] = M[i, j] - M[i, k] * M[k, j]
+                    M[i, j] -= M[i, k] * M[k, j]
     Mu_inv = lil_matrix(M.shape, dtype=np.float64)
     for i in range(dim):
         Mu_inv[i, i] = 1 / sqrt(M[i, i])

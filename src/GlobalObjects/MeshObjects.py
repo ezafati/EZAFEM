@@ -1,8 +1,8 @@
-import sys
 from typing import List, Tuple, Type
-from GlobalObjects.MatrixObjects import MatrixObj, _mat_assembly_2d, VectObject
+from GlobalObjects.MatrixObjects import MatrixObj, mat_assembly_2d, VectObject
 from GlobalObjects.MathUtils import GaussPoints
 from GlobalObjects.MaterialObjects import Material
+from GlobalObjects.BoundaryObjects import Boundary, PerfectInterface
 import numpy as np
 import os.path
 import yaml
@@ -17,6 +17,7 @@ class MeshObj(object):
     def __init__(self, dim: int = 2):
         self.dim = dim
         self.parts = []
+        self.boundaries = None
 
     def get_parts(self):
         with open(MAIN_YAML_PATH, 'r') as f:
@@ -54,7 +55,8 @@ class MeshObj(object):
             except StopIteration:
                 pass
 
-    def get_part_topology(self, part, file):
+    @staticmethod
+    def get_part_topology(part, file):
         with open(file, 'r') as f:
             try:
                 while True:
@@ -90,7 +92,8 @@ class MeshObj(object):
                                     line = next(f)
                                     if line.strip() == 'NAMED_BOUNDARIES':
                                         size = int(next(f).split(' ')[1])
-                                        part.bound = Boundary()
+                                        if not isinstance(part.bound, Boundary):
+                                            part.bound = Boundary()
                                         for _ in range(size):
                                             bd = next(f).strip()
                                             lpt = next(f).split(',')
@@ -115,7 +118,8 @@ class MeshObj(object):
                                     line = next(f)
                                     if line.strip() == 'NAMED_POINTS':
                                         size = int(next(f).split(' ')[1])
-                                        part.bound = Boundary()
+                                        if not isinstance(part.bound, Boundary):
+                                            part.bound = Boundary()
                                         for _ in range(size):
                                             pt, *_, npt = next(f).split(' ')
                                             part.bound.point_data[pt] = int(npt)
@@ -137,12 +141,40 @@ class MeshObj(object):
             self.get_part_boundary(part, file)
             self.get_part_points(part, file)
 
+    def add_boundary(self, file):
+        """"add boundaries specified in
+        main.yml"""
+        self.boundaries = []
+        with open(file, 'r') as f:
+            d = yaml.load(f.read(), Loader=yaml.Loader)
+        try:
+            bounds = d['boundary']
+            for bound in bounds:
+                bd = eval(f"{bound.get('type')}()")
+                parts = bound['parts']
+                for part in parts:
+                    prt, = filter(lambda p: p.label == part['part'], self.parts)
+                    bd_label = part.get('bound')
+                    if bd.list_int is None:
+                        bd.list_int = []
+                    bd.list_int.append((prt, bd_label))
+                print(bd)
+        except (KeyError, NameError) as e:
+            raise Exception('appropriate boundaries should be specified in main.yml file: ', e)
+
 
 class SolidPart(MeshObj):
-    stiffmat = MatrixObj(mtype='stiff')
-    massmat = MatrixObj(mtype='mass')
-    dispvct = VectObject(vtype='disp')
-    forcvct = VectObject(vtype='forc')
+
+    def __new__(cls, label: str = 'PART', plist: List[Tuple[int]] = None, conn: 'Array' = None, gard: 'Array' = None,
+                mate: Type[Material] = None, dim: int = 2, eltype: str = None, probtype: str = None,
+                nbvertx: int = None, defoarray: 'Array' = None):
+
+        cls.stiffmat = MatrixObj(mtype='stiff')
+        cls.massmat = MatrixObj(mtype='mass')
+        cls.dispvct = VectObject(vtype='disp')
+        cls.forcvct = VectObject(vtype='forc')
+        instance = super().__new__(cls)
+        return instance
 
     def __init__(self, label: str = 'PART', plist: List[Tuple[int]] = None, conn: 'Array' = None, gard: 'Array' = None,
                  mate: Type[Material] = None, dim: int = 2, eltype: str = None, probtype: str = None,
@@ -171,6 +203,7 @@ class SolidPart(MeshObj):
                f'probtype={self.probtype}, dim={self.dim}, bound={self.bound})'
 
     def initiate(self):
+        """initialize the solid part"""
         self.grad_shape_array()
         self.get_part_material()
         self.initiliaze_eps_array()
@@ -203,7 +236,7 @@ class SolidPart(MeshObj):
         """assembly matrix according to the
         matrix type"""
         mat = eval(f'self.{mtype}mat')
-        eval(f'_mat_assembly_{self.dim}d(self, mtype, **kwargs)')
+        eval(f'mat_assembly_{self.dim}d(self, mtype, **kwargs)')
 
     def grad_shape_array(self):
         """"compute the gradient shape array
@@ -234,25 +267,3 @@ class SolidPart(MeshObj):
                 shape_func.append((Nav, Nbv, Ncv, detJ))
             vct_tmp.append(shape_func)
         self.shape_grad = vct_tmp
-
-
-class Boundary:
-    """class describing the boundray conditions"""
-
-    def __init__(self):
-        self.bound_data = {}
-        self.point_data = {}
-        self.forc_impos = None
-        self.disp_impos = None
-
-
-class Interface:
-    def __init__(self, itype: str = None, dom1: Tuple[str] = None, dom2: Tuple[str] = None):
-        self.type = itype
-        self.domA = dom1
-        self.domB = dom2
-
-    def make_link_matrices(self):
-        """C=return tuple contains the link matrices
-        corresponding to the interface A-B"""
-        return 'not implemented'
