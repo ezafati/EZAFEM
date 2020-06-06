@@ -12,22 +12,31 @@ class Boundary:
 
 
 class LinkMatrix:
+    """ descriptor to store the links matrices
+    for each interface SOLID-SOLID or SOLID-FLUID
+    or FLUID-FLUID"""
     def __init__(self):
-        self.data = {}  # to store the matrix for each part in the mesh
+        self._data = {}  # to store the matrix for each part in the mesh
+
+    @property
+    def data(self):
+        return self._data
 
     def __get__(self, instance, owner):
         if not instance:
             return self
         if instance not in self.data:
             if len(instance.list_int) == 2:
-                count = 0
                 self.data[instance] = list()
                 for inter in instance.list_int:
                     part, bound_name = inter
                     dim = part.dim
                     npt = part.plist.shape[0]
                     lbd = part.bound.bound_data.get(bound_name)
-                    mlink = lil_matrix((dim * len(lbd), dim * npt), dtype=np.float64)
+                    if part.__class__.__name__ == 'SolidPart':
+                        mlink = lil_matrix((dim * len(lbd), dim * npt), dtype=np.float64)
+                    else:
+                        mlink = None
                     self.data[instance].append((part, mlink))
         return self.data.get(instance)
 
