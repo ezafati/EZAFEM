@@ -11,7 +11,7 @@ parts:
       physic: SOLID
       probtype: STRESS
       mesh:
-        element_type: TRI6
+        element_type: TRI3
       material:
         - type: Linear_Elastic_ISO
 
@@ -19,9 +19,9 @@ boundary:
   - type: PerfectInterface
     parts:
       - part: PART1
-        bound: L1
+        bound: L4
       - part: PART2
-        bound: L1
+        bound: L6
 
 
 
