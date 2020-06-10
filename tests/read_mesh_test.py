@@ -5,9 +5,9 @@ import os
 root_dir, *_ = os.path.split(os.getcwd())
 MAIN_YAML_PATH = os.path.join(root_dir, 'src/main.yml')
 
-mymesh = MeshObj()
+mymesh = MeshObj(file='mesh.txt')
 
-mymesh.read_ezamesh('mesh.txt')
+#mymesh.read_ezamesh()
 parts = mymesh.parts
 parts[0].initiate()
 # print(parts[0].shape_grad)

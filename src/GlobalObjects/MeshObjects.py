@@ -14,10 +14,17 @@ GAUSS_POINTS_JSON = os.path.join(os.path.split(os.path.dirname(__file__))[0], 'm
 
 class MeshObj(object):
 
-    def __init__(self, dim: int = 2):
+    def __init__(self, dim: int = 2, file: str = None, yml_file: str = None):
         self.dim = dim
         self.parts = []
         self.boundaries = None
+        self.mesh_file = file  # mesh file
+        self.main_yaml_file = yml_file
+        try:
+            self.read_ezamesh()
+        except (FileNotFoundError, PermissionError):
+            raise Exception(f'mesh file --{self.mesh_file}-- not found or check the permission'
+                            f': please add a correct mesh file path with the correct permission')
 
     def get_parts(self):
         with open(MAIN_YAML_PATH, 'r') as f:
@@ -130,11 +137,12 @@ class MeshObj(object):
             except StopIteration:
                 pass
 
-    def read_ezamesh(self, file):
+    def read_ezamesh(self):
         """Read  mesh file from EZAMESH
         and fill all the attributes of the instance"""
         self.dim = 2
         self.get_parts()
+        file = self.mesh_file
         for part in self.parts:
             self.get_part_plist(part, file)
             self.get_part_topology(part, file)
@@ -158,12 +166,14 @@ class MeshObj(object):
                     if bd.list_int is None:
                         bd.list_int = []
                     bd.list_int.append((prt, bd_label))
+                bd.make_link_matrices()
+                self.boundaries.append(bd)
                 print(bd)
         except (KeyError, NameError) as e:
             raise Exception('appropriate boundaries should be specified in main.yml file: ', e)
 
 
-class SolidPart(MeshObj):
+class SolidPart(object):
 
     def __new__(cls, label: str = 'PART', plist: List[Tuple[int]] = None, conn: 'Array' = None, gard: 'Array' = None,
                 mate: Type[Material] = None, dim: int = 2, eltype: str = None, probtype: str = None,
@@ -179,7 +189,7 @@ class SolidPart(MeshObj):
     def __init__(self, label: str = 'PART', plist: List[Tuple[int]] = None, conn: 'Array' = None, gard: 'Array' = None,
                  mate: Type[Material] = None, dim: int = 2, eltype: str = None, probtype: str = None,
                  nbvertx: int = None, defoarray: 'Array' = None):
-        super().__init__(dim)
+        self.dim = dim
         self.label = label
         self.eltype = eltype
         self.nbvertx = nbvertx
