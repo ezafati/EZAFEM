@@ -22,6 +22,16 @@ boundary:
         bound: L4
       - part: PART2
         bound: L6
+  - type: ImposedKinematic
+    parts:
+      - part: PART1
+        bound: L1
+    properties:
+      - type: velocity
+        direction: x
+        evol:
+          range: 0, 1, 2
+          mag: sin{t}, 1+{t}
 
 
 

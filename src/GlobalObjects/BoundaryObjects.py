@@ -87,7 +87,7 @@ class PerfectInterface:
 
         return check_equal
 
-    def make_link_matrices(self):
+    def make_link_matrices(self, prop):
         """C=return tuple contains the link matrices
         corresponding to the interface A-B"""
         self.bound_reorder()
@@ -116,3 +116,16 @@ class PerfectInterface:
                         count += 2
             bol *= -1
 
+
+class ImposedKinematic:
+    link_mat = LinkMatrix()
+
+    def __init__(self, itype: str = None, list_int: List[Tuple['Part', str]] = None):
+        self.type = itype
+        self.list_int = list_int  # (part, named-boundary)
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}(itype={self.type}, list_int={self.list_int})'
+
+    def make_link_matrices(self, prop: List):
+        pass

@@ -2,7 +2,7 @@ from typing import List, Tuple, Type
 from GlobalObjects.MatrixObjects import MatrixObj, mat_assembly_2d, VectObject
 from GlobalObjects.MathUtils import GaussPoints
 from GlobalObjects.MaterialObjects import Material
-from GlobalObjects.BoundaryObjects import Boundary, PerfectInterface
+from GlobalObjects.BoundaryObjects import *
 import numpy as np
 import os.path
 import yaml
@@ -166,7 +166,12 @@ class MeshObj(object):
                     if bd.list_int is None:
                         bd.list_int = []
                     bd.list_int.append((prt, bd_label))
-                bd.make_link_matrices()
+                prop = []
+                try:
+                    prop = bound['properties']
+                except KeyError:
+                    pass
+                bd.make_link_matrices(prop)
                 self.boundaries.append(bd)
                 print(bd)
         except (KeyError, NameError) as e:
