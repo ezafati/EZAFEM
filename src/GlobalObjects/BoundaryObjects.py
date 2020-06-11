@@ -2,6 +2,7 @@ import math
 from typing import Tuple, List
 import numpy as np
 from scipy.sparse import lil_matrix
+from math import *
 
 
 class Boundary:
@@ -44,6 +45,22 @@ class LinkMatrix:
                     else:
                         mlink = None
                     self.data[instance].append((part, mlink))
+            elif len(instance.list_int) == 1:
+                self.data[instance] = list()
+                for inter in instance.list_int:
+                    part, bound_name = inter
+                    npt = part.plist.shape[0]
+                    try:
+                        lbd = part.bound.bound_data.get(bound_name)
+                    except KeyError as e:
+                        try:
+                            lbd = part.bound.point_data.get(bound_name)
+                        except KeyError as e:
+                            raise Exception(f'boundary {bound_name} not found for part {part.label}:'
+                                            f'PLease make sure that the appropriate boundaries are well specified')
+                    xdir, ydir = instance.prop.get('direction').strip().split(',')
+                    xdir, ydir = eval(xdir), eval(ydir)
+
         return self.data.get(instance)
 
     def __set__(self, instance, value):
@@ -87,15 +104,14 @@ class PerfectInterface:
 
         return check_equal
 
-    def make_link_matrices(self, prop):
+    def make_link_matrices(self):
         """C=return tuple contains the link matrices
         corresponding to the interface A-B"""
         self.bound_reorder()
         bol = -1
         mlink1, mlink2 = self.link_mat  # mlink = Tuple ==> (part, link-matrix)
         for inter in self.list_int:
-            part = inter[0]
-            bound_name = inter[1]
+            part, bound_name = inter
             bound_data = part.bound.bound_data[bound_name]
             if part.__class__.__name__ == 'SolidPart':
                 if part is mlink1[0]:
@@ -123,9 +139,13 @@ class ImposedKinematic:
     def __init__(self, itype: str = None, list_int: List[Tuple['Part', str]] = None):
         self.type = itype
         self.list_int = list_int  # (part, named-boundary)
+        self.prop = None
 
     def __repr__(self):
         return f'{self.__class__.__name__}(itype={self.type}, list_int={self.list_int})'
 
-    def make_link_matrices(self, prop: List):
-        pass
+    def make_link_matrices(self):
+        kine = self.prop.get('type')
+        dire = self.prop.get('direction')
+        evol = self.prop.get('evol')
+        mate = self.link_mat

@@ -27,11 +27,11 @@ boundary:
       - part: PART1
         bound: L1
     properties:
-      - type: velocity
-        direction: x
-        evol:
-          range: 0, 1, 2
-          mag: sin{t}, 1+{t}
+      type: velocity
+      direction: cos(pi/4), sin(pi/4)
+      evol:
+        range: 0, 1, 2
+        mag: sin{t}, 1+{t}
 
 
 

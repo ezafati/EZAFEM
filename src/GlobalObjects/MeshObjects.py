@@ -166,12 +166,12 @@ class MeshObj(object):
                     if bd.list_int is None:
                         bd.list_int = []
                     bd.list_int.append((prt, bd_label))
-                prop = []
                 try:
                     prop = bound['properties']
+                    bd.prop = prop
                 except KeyError:
                     pass
-                bd.make_link_matrices(prop)
+                bd.make_link_matrices()
                 self.boundaries.append(bd)
                 print(bd)
         except (KeyError, NameError) as e:
