@@ -60,6 +60,7 @@ class LinkMatrix:
                                             f'PLease make sure that the appropriate boundaries are well specified')
                     xdir, ydir = instance.prop.get('direction').strip().split(',')
                     xdir, ydir = eval(xdir), eval(ydir)
+                    pass
 
         return self.data.get(instance)
 
