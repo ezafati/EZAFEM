@@ -49,6 +49,7 @@ class LinkMatrix:
                 self.data[instance] = list()
                 for inter in instance.list_int:
                     part, bound_name = inter
+                    dim = part.dim
                     npt = part.plist.shape[0]
                     try:
                         lbd = part.bound.bound_data.get(bound_name)
@@ -60,7 +61,25 @@ class LinkMatrix:
                                             f'PLease make sure that the appropriate boundaries are well specified')
                     xdir, ydir = instance.prop.get('direction').strip().split(',')
                     xdir, ydir = eval(xdir), eval(ydir)
-                    pass
+                    if part.__class__.__name__ == 'SolidPart':
+                        try:
+                            assert abs(xdir ** 2 + ydir ** 2 - 1) < 1e-5
+                            if xdir == 0 or ydir == 0:
+                                mlink = lil_matrix((len(lbd), npt), dtype=np.float64)
+                                mbound = np.ndarray(shape=(len(lbd), 1),
+                                                    buffer=np.array(len(lbd) * [1], dtype=np.float32),
+                                                    dtype=np.float32)
+                            else:
+                                mlink = lil_matrix((dim * len(lbd), npt), dtype=np.float64)
+                                mbound = np.ndarray(shape=(dim * len(lbd), 1),
+                                                    buffer=np.array(len(lbd) * [xdir, ydir], dtype=np.float32),
+                                                    dtype=np.float32)
+                        except AssertionError as e:
+                            raise Exception(f'Fatal error {e}: direction should be of norm 1 for imposed boundary '
+                                            f'conditions')
+                    else:
+                        mlink, mbound = None, None  # to be implemented later for fluid part
+                    self.data[instance] = (part, mlink, mbound)
 
         return self.data.get(instance)
 
@@ -146,7 +165,30 @@ class ImposedKinematic:
         return f'{self.__class__.__name__}(itype={self.type}, list_int={self.list_int})'
 
     def make_link_matrices(self):
-        kine = self.prop.get('type')
-        dire = self.prop.get('direction')
-        evol = self.prop.get('evol')
-        mate = self.link_mat
+        xdir, ydir = self.prop.get('direction').strip().split(',')
+        xdir, ydir  = eval(xdir), eval(ydir)
+        part, mlink, mbound = self.link_mat
+        for inter in self.list_int:
+            part, bound_name = inter
+            dim = part.dim
+            try:
+                bound_data = part.bound.bound_data[bound_name]
+            except KeyError:
+                bound_data = part.bound.point_data.get(bound_name)
+            if part.__class__.__name__ == 'SolidPart':
+                if xdir == 0:
+                    count = 0
+                    for npt in bound_data:
+                        mlink[count, dim * npt + 1] = 1
+                        count += 1
+                elif ydir == 0:
+                    count = 0
+                    for npt in bound_data:
+                        mlink[count, dim * npt] = 1
+                        count += 1
+                else:
+                    count = 0
+                    for npt in bound_data:
+                        mlink[count, dim * npt] = 1
+                        mlink[count + 1, dim * npt + 1] = 1
+                        count += 2
